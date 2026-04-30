@@ -1,0 +1,7 @@
+Before Running the Notebook:
+
+Don't run the setup cells in the Notebook.
+
+Activate venv:
+source .venv/bin/activate
+
