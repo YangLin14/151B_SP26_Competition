@@ -8,6 +8,7 @@ repeatable and easy to scale from a small smoke test to a full training run.
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 import random
@@ -220,6 +221,14 @@ def save_metadata(path: Path, metadata: dict[str, Any]) -> None:
     path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def filter_supported_kwargs(callable_obj: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Keep only kwargs accepted by the installed library version."""
+    signature = inspect.signature(callable_obj)
+    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()):
+        return kwargs
+    return {key: value for key, value in kwargs.items() if key in signature.parameters}
+
+
 def main() -> None:
     args = parse_args()
     configure_environment()
@@ -312,28 +321,34 @@ def main() -> None:
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    training_args = SFTConfig(
-        output_dir=str(output_dir),
-        per_device_train_batch_size=args.batch_size,
-        gradient_accumulation_steps=args.grad_accum,
-        learning_rate=args.learning_rate,
-        num_train_epochs=args.num_epochs,
-        max_steps=args.max_steps,
-        warmup_ratio=args.warmup_ratio,
-        logging_steps=args.logging_steps,
-        save_steps=args.save_steps,
-        save_total_limit=2,
-        bf16=True,
-        optim="paged_adamw_8bit",
-        lr_scheduler_type="cosine",
-        gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
-        max_seq_length=args.max_seq_len,
-        packing=False,
-        dataset_text_field="text",
-        report_to="none",
-        seed=args.seed,
-    )
+    sft_config_params = inspect.signature(SFTConfig).parameters
+    length_key = "max_seq_length" if "max_seq_length" in sft_config_params else "max_length"
+    if length_key not in sft_config_params:
+        raise RuntimeError("Installed TRL SFTConfig supports neither max_seq_length nor max_length.")
+
+    sft_config_kwargs = {
+        "output_dir": str(output_dir),
+        "per_device_train_batch_size": args.batch_size,
+        "gradient_accumulation_steps": args.grad_accum,
+        "learning_rate": args.learning_rate,
+        "num_train_epochs": args.num_epochs,
+        "max_steps": args.max_steps,
+        "warmup_ratio": args.warmup_ratio,
+        "logging_steps": args.logging_steps,
+        "save_steps": args.save_steps,
+        "save_total_limit": 2,
+        "bf16": True,
+        "optim": "paged_adamw_8bit",
+        "lr_scheduler_type": "cosine",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+        length_key: args.max_seq_len,
+        "packing": False,
+        "dataset_text_field": "text",
+        "report_to": "none",
+        "seed": args.seed,
+    }
+    training_args = SFTConfig(**filter_supported_kwargs(SFTConfig, sft_config_kwargs))
 
     metadata = {
         "run_name": args.run_name,
@@ -361,12 +376,14 @@ def main() -> None:
     }
     save_metadata(output_dir / "run_metadata.pretrain.json", metadata)
 
-    trainer = SFTTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset,
-        processing_class=tokenizer,
-    )
+    trainer_kwargs = {
+        "model": model,
+        "args": training_args,
+        "train_dataset": train_dataset,
+        "processing_class": tokenizer,
+        "tokenizer": tokenizer,
+    }
+    trainer = SFTTrainer(**filter_supported_kwargs(SFTTrainer, trainer_kwargs))
 
     t0 = time.time()
     train_result = trainer.train()
