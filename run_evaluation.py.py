@@ -57,7 +57,7 @@ print("=============================================")
 # --- 2. Configuration ---
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 DATA_PATH = "data/public.jsonl"
-RUN_NAME = "prompt_v2_greedy_smoke_50"
+RUN_NAME = "K = 7 test on 50"
 OUTPUT_PATH = f"results/{RUN_NAME}.jsonl"
 MAX_TOKENS = 32768 
 EVAL_LIMIT = 50
@@ -164,12 +164,22 @@ vllm_model = LLM(
     model=MODEL_ID,
     dtype="bfloat16",
     trust_remote_code=True,
-    gpu_memory_utilization=0.92,    
-    max_model_len=32768,            
-    max_num_seqs=16,              
-    max_num_batched_tokens=65536,  
-    enable_chunked_prefill=True,    
-    enable_prefix_caching=True,     
+    
+    # 1. MEMORY OPTIMIZATION
+    gpu_memory_utilization=0.92,    # Push to 92% (Leaves ~1.9GB for system)
+    
+    # 2. CONTEXT OPTIMIZATION 
+    max_model_len=32768,            # Retains full 32k reasoning/thinking capacity
+    
+    # 3. THROUGHPUT OPTIMIZATION (UPDATED FOR K=7)
+    max_num_seqs=8,                # Lowered from 32 to 11 to keep total paths at 77 (11 * 7)
+    max_num_batched_tokens=32768,   # Allow larger batches of tokens to be processed
+    
+    # 4. PREFILL SPEED FIX 
+    enable_chunked_prefill=True,    # This breaks the 4.93 toks/s bottleneck
+    
+    # 5. CACHING
+    enable_prefix_caching=True,     # Keeps your system prompt in memory
 )
 
 sampling_params_sc = SamplingParams(
