@@ -4,3 +4,12 @@ __pycache__/
 .ipynb_checkpoints/
 .cache/
 *.log
+
+# Generated training artifacts. Keep adapters/checkpoints outside Git and
+# share them through releases, cloud storage, or Hugging Face if needed.
+outputs/
+
+# Generated QLoRA eval artifacts. Keep curated summaries in docs instead.
+results/qlora_*.jsonl
+results/qlora_*.raw.jsonl
+results/qlora_*.metadata.json
