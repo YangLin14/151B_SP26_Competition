@@ -203,7 +203,7 @@ def score_results(eval_data: list[dict[str, Any]], per_question_raw: list[list[d
             correct = pred_letter == str(gold).strip().upper()
         else:
             gold_list = gold if isinstance(gold, list) else [gold]
-            pred_for_judge = voted if voted is not None else rep_text
+            pred_for_judge = f"\\boxed{{{voted}}}" if voted is not None else rep_text
             pred_letter = None
             try:
                 correct = judger.auto_judge(
