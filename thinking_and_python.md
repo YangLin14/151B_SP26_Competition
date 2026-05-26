@@ -29,13 +29,19 @@ Replaced the single batched `vllm_model.generate()` call with a 3-phase pipeline
 - Code is extracted from the ` ```python ``` ` block and executed in a subprocess with a 15s timeout.
 - On success, stdout is wrapped as `\boxed{<output>}` and stored — the scoring cell requires no changes.
 
-### Phase 2 — Retry with error feedback (1 retry)
+### Phase 2 — Retry with error feedback (within one cycle)
 - If execution fails, the error message + broken code are fed back into a retry prompt.
 - The model sees exactly what went wrong and rewrites the script.
 - Controlled by `MAX_PYTHON_RETRIES = 1`.
 
-### Phase 3 — Reasoning fallback
-- Questions that still fail after all Python retries fall back to the original thinking-mode reasoning path.
+### Phase 3 — Fresh inference restart (`MAX_CODE_RESTARTS`)
+- Questions that exhaust all retries within a cycle are **not** immediately sent to reasoning.
+- Instead, a brand-new inference cycle begins for those questions only: `py_state` is cleared (no carryover error context), and the full `MAX_PYTHON_RETRIES + 1` round loop runs again from a clean slate.
+- This repeats up to `MAX_CODE_RESTARTS = 3` times total.
+- All cycles are fully batched — only the still-failing subset is sent each time.
+
+### Phase 4 — Reasoning fallback
+- Only questions that fail every attempt across every restart cycle fall back to the original thinking-mode reasoning path.
 - Generates `n=1` sample (changed from `n=5` — see below).
 - All batched, so GPU throughput is preserved.
 
