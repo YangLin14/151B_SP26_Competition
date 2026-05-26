@@ -15,6 +15,18 @@ Important:
 Native Windows: do not install or run vllm.
 Linux / WSL / DSMLP / Colab: vllm is OK.
 Python 3.13 is not OK for the pinned PyTorch stack. Use Python 3.11.
+PowerShell commands are not the same as DSMLP Bash commands.
+```
+
+Command syntax differences:
+
+```text
+Windows PowerShell line continuation: `
+Linux/DSMLP Bash line continuation: \
+Windows paths: outputs\...
+Linux/DSMLP paths: outputs/...
+Windows eval backend: Transformers
+Linux/DSMLP eval backend: vLLM
 ```
 
 ---
@@ -78,7 +90,86 @@ uv venv .venv --python 3.12 --seed
 
 ---
 
-## 3. QLoRA smoke training
+## 3. DSMLP end-to-end pipeline
+
+Use these on DSMLP/Linux Bash. They are not PowerShell commands.
+
+Setup:
+
+```bash
+cd ~/private/CSE\ 151B/151B_SP26_Competition
+
+uv venv .venv --python 3.11 --seed
+source .venv/bin/activate
+
+uv pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+uv pip install sympy numpy transformers vllm tqdm bitsandbytes antlr4-python3-runtime==4.11.1 ipykernel jupyter accelerate peft trl datasets sentencepiece protobuf scipy pandas scikit-learn -c constraints.txt
+
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO CUDA')"
+python -c "from trl import SFTTrainer, SFTConfig; print('TRL import OK')"
+python -c "from vllm import LLM, SamplingParams; print('vLLM import OK')"
+```
+
+Public QLoRA smoke training:
+
+```bash
+python scripts/qlora_sft_train.py \
+  --run-name qlora_sft_public_smoke \
+  --data-source public \
+  --max-train-examples 200 \
+  --max-steps 50 \
+  --max-seq-len 2048
+```
+
+Base control eval with vLLM:
+
+```bash
+python scripts/qlora_vllm_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-tokens 8192 \
+  --output-path results/qlora_base_control_eval_50.jsonl
+```
+
+Public QLoRA adapter eval with vLLM:
+
+```bash
+python scripts/qlora_vllm_eval.py \
+  --adapter-path outputs/qlora_sft_public_smoke/final_adapter \
+  --adapter-name qlora_sft_public_smoke \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-tokens 8192 \
+  --output-path results/qlora_sft_public_smoke_eval_50.jsonl
+```
+
+Numina CoT smoke training:
+
+```bash
+python scripts/qlora_sft_train.py \
+  --run-name qlora_sft_numina_smoke \
+  --data-source numina \
+  --max-train-examples 500 \
+  --max-steps 50 \
+  --max-seq-len 2048 \
+  --numina-shuffle-buffer 10000
+```
+
+Numina adapter eval with vLLM:
+
+```bash
+python scripts/qlora_vllm_eval.py \
+  --adapter-path outputs/qlora_sft_numina_smoke/final_adapter \
+  --adapter-name qlora_sft_numina_smoke \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-tokens 8192 \
+  --output-path results/qlora_numina_smoke_eval_50.jsonl
+```
+
+---
+
+## 4. QLoRA smoke training
 
 Use this first on native Windows RTX 3060. It is intentionally conservative.
 
@@ -129,7 +220,7 @@ cat outputs/qlora_sft_public_smoke/run_metadata.json
 
 ---
 
-## 4. Native Windows evaluation with Transformers
+## 5. Native Windows evaluation with Transformers
 
 Use this on native Windows. It does not require vLLM.
 
@@ -162,7 +253,7 @@ with the same generation settings.
 
 ---
 
-## 5. Linux / WSL / DSMLP evaluation with vLLM
+## 6. Linux / WSL / DSMLP evaluation with vLLM
 
 Use this only where vLLM is supported.
 
@@ -180,7 +271,7 @@ python scripts/qlora_vllm_eval.py --adapter-path outputs/qlora_sft_public_smoke/
 
 ---
 
-## 6. Real training: public-format adapter
+## 7. Real training: public-format adapter
 
 This trains on the 80% public train split and keeps the 20% dev split held out.
 It teaches output format, but it only has final-answer supervision.
@@ -225,7 +316,7 @@ python scripts/qlora_vllm_eval.py --adapter-path outputs/qlora_sft_public_v1/fin
 
 ---
 
-## 7. Real training: NuminaMath CoT adapter
+## 8. Real training: NuminaMath CoT adapter
 
 This uses worked-solution math data. It is the more realistic SFT path for
 improving reasoning.
@@ -280,7 +371,7 @@ python scripts/qlora_vllm_eval.py --adapter-path outputs/qlora_sft_numina_5k/fin
 
 ---
 
-## 8. How to read eval results
+## 9. How to read eval results
 
 The eval scripts print:
 
