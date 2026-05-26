@@ -41,7 +41,7 @@ force a stable row id.
 | Eval id | Train run / model | Backend | Adapter? | Eval split | n | Prompt mode | Token budget | k | Temp / top_p / top_k | MCQ | Free-form | Overall | Avg tokens | Boxed | Truncated | Output path | Notes |
 |---|---|---|---|---|---:|---|---|---:|---|---:|---:|---:|---:|---:|---:|---|---|
 | `numina_5k_adapter_tf_50` | `qlora_sft_numina_5k_2048` | Transformers | yes | `outputs/qlora_sft_public_smoke/public_dev_split.jsonl` | 50 | current / thinking | max input 2048, max new 2048 | 1 | 0.6 / 0.95 / 20 | 6 / 18 (33.33%) | 14 / 32 (43.75%) | 20 / 50 (40.00%) | TBD | TBD | TBD | TBD | Adapter result from current run. |
-| `base_tf_same_as_numina_5k_50` | base `Qwen/Qwen3-4B-Thinking-2507` | Transformers | no | same as above | 50 | same as adapter | same as adapter | 1 | same as adapter | pending | pending | pending | pending | pending | pending | TBD | Currently running. This is the fair control for the adapter above. |
+| `base_tf_same_as_numina_5k_50` | base `Qwen/Qwen3-4B-Thinking-2507` | Transformers | no | same as above | 50 | same as adapter | same as adapter | 1 | same as adapter | 2 / 18 (11.11%) | 15 / 32 (46.88%) | 17 / 50 (34.00%) | TBD | TBD | TBD | TBD | Fair control for `qlora_sft_numina_5k_2048`; adapter is +3 overall but worse on free-form. |
 | `numina_5k_adapter_tf_4096_50` | `qlora_sft_numina_5k_2048` | Transformers | yes | same as above | 50 | thinking | max input 2048, max new 4096 | 1 | 0.6 / 0.95 / 20 | TBD | TBD | TBD | TBD | TBD | TBD | `results/qlora_numina_5k_2048_thinking4096_eval_50.jsonl` | Tests whether adapter needs more output budget. |
 | `base_tf_thinking4096_50` | base `Qwen/Qwen3-4B-Thinking-2507` | Transformers | no | same as above | 50 | thinking | max input 2048, max new 4096 | 1 | 0.6 / 0.95 / 20 | TBD | TBD | TBD | TBD | TBD | TBD | `results/qlora_base_thinking4096_transformers_eval_50.jsonl` | Fair control for the 4096-token adapter eval. |
 | `base_vllm_promptopt_50` | base `Qwen/Qwen3-4B-Thinking-2507` | vLLM | no | same as above | 50 | prompt optimized / thinking | max tokens 32768 | 7 | 0.6 / 0.95 / 20 | TBD | TBD | TBD | TBD | TBD | TBD | `results/qlora_base_promptopt_vllm_eval_50.jsonl` | Not comparable to adapter. Use for prompt optimization and possible self-distillation. |
@@ -237,8 +237,40 @@ assistant: rep_response from the correct base generation
 
 5. Train QLoRA on that filtered trace dataset.
 
-This needs one small implementation step before running: add a custom trace
-dataset loader to `scripts/qlora_sft_train.py`, or add a separate
-`scripts/qlora_train_from_traces.py`. The current training script supports
-`public` and `numina`; it does not yet train directly from filtered generated
-traces.
+Build the filtered trace dataset:
+
+```bash
+python scripts/qlora_build_trace_dataset.py \
+  --data-path outputs/qlora_sft_public_smoke/public_train_split.jsonl \
+  --results-path results/public_train_base_promptopt_vllm.jsonl \
+  --output-path data/public_correct_traces.jsonl
+```
+
+Train on the filtered traces:
+
+```bash
+python scripts/qlora_sft_train.py \
+  --run-name qlora_sft_selfdistill_public_v1 \
+  --data-source traces \
+  --trace-data-path data/public_correct_traces.jsonl \
+  --max-train-examples -1 \
+  --max-steps -1 \
+  --max-seq-len 4096 \
+  --learning-rate 1e-4 \
+  --lora-r 32 \
+  --lora-alpha 64
+```
+
+Evaluate:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --adapter-path outputs/qlora_sft_selfdistill_public_v1/final_adapter \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 4096 \
+  --enable-thinking \
+  --output-path results/qlora_selfdistill_public_v1_eval_50.jsonl \
+  --tracker-eval-id selfdistill_public_v1_tf_4096_50
+```

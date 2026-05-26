@@ -26,6 +26,30 @@ python -c "from trl import SFTTrainer, SFTConfig; print('TRL import OK')"
 python -c "from vllm import LLM, SamplingParams; print('vLLM import OK')"
 ```
 
+If vLLM fails with an error like:
+
+```text
+ImportError: .../vllm/_C.abi3.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKSsb
+```
+
+then the installed `vllm` wheel is not ABI-compatible with the installed
+`torch`. Fix by reinstalling the pinned torch stack first, then reinstalling
+vLLM against that stack:
+
+```bash
+uv pip uninstall vllm -y
+uv pip install --force-reinstall torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+uv pip install --force-reinstall vllm==0.7.3 -c constraints.txt
+
+python -c "import torch; print(torch.__version__, torch.version.cuda)"
+python -c "from vllm import LLM, SamplingParams; print('vLLM import OK')"
+```
+
+If that still fails on the current DSMLP GPU/node, skip vLLM for now and use
+`scripts/qlora_transformers_eval.py`. vLLM is only needed for fast base-model
+prompt optimization and public-trace generation; adapter comparison already uses
+Transformers.
+
 If Python 3.11 is unavailable but Python 3.12 is installed:
 
 ```bash
@@ -294,8 +318,44 @@ python scripts/qlora_vllm_eval.py \
 
 Then keep rows from `results/public_train_base_promptopt_vllm.jsonl` where
 `correct == true`, `voted` is not null, and generations are not fully truncated.
-The current training script does not yet train directly from filtered traces;
-that needs a `traces` dataset loader or a separate trace-training script.
+
+Build the filtered trace dataset:
+
+```bash
+python scripts/qlora_build_trace_dataset.py \
+  --data-path outputs/qlora_sft_public_smoke/public_train_split.jsonl \
+  --results-path results/public_train_base_promptopt_vllm.jsonl \
+  --output-path data/public_correct_traces.jsonl
+```
+
+Train the self-distilled public-trace adapter:
+
+```bash
+python scripts/qlora_sft_train.py \
+  --run-name qlora_sft_selfdistill_public_v1 \
+  --data-source traces \
+  --trace-data-path data/public_correct_traces.jsonl \
+  --max-train-examples -1 \
+  --max-steps -1 \
+  --max-seq-len 4096 \
+  --learning-rate 1e-4 \
+  --lora-r 32 \
+  --lora-alpha 64
+```
+
+Evaluate the self-distilled adapter:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --adapter-path outputs/qlora_sft_selfdistill_public_v1/final_adapter \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 4096 \
+  --enable-thinking \
+  --output-path results/qlora_selfdistill_public_v1_eval_50.jsonl \
+  --tracker-eval-id selfdistill_public_v1_tf_4096_50
+```
 
 Decision rule:
 

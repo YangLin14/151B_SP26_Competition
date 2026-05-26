@@ -1,0 +1,51 @@
+Presentation Title
+Presenter Name
+
+Summary
+3 - 4 sentence summary of the presentation 
+Who is in your team
+How did you solve the problem
+What have you learned
+
+Key Words
+Deep Sequence Model
+Computer Vision
+
+Introduction 
+
+Team Introduction
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Methodology
+
+Data Processing
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Deep Learning Model
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Engineering Tricks 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Experiments
+
+Experiment 1
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Experiment 2
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+Discussion
+
+Strength/Weakness/Improvement
+3 Strengths
+3 Weaknesses
+Improvements
+
+What have you learned
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+
+Future Work
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+

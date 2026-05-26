@@ -34,14 +34,16 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--data-source",
-        choices=["public", "numina"],
+        choices=["public", "numina", "traces"],
         default="public",
         help=(
             "public uses data/public.jsonl with an internal train/dev split; "
-            "numina uses AI-MO/NuminaMath-CoT from Hugging Face."
+            "numina uses AI-MO/NuminaMath-CoT from Hugging Face; "
+            "traces uses filtered correct generations from qlora_build_trace_dataset.py."
         ),
     )
     parser.add_argument("--public-data-path", default="data/public.jsonl")
+    parser.add_argument("--trace-data-path", default="data/public_correct_traces.jsonl")
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--numina-dataset", default="AI-MO/NuminaMath-CoT")
     parser.add_argument(
@@ -253,6 +255,45 @@ def build_numina_dataset(
     return formatted, raw_rows, []
 
 
+def build_trace_dataset(
+    *,
+    path: Path,
+    max_train_examples: int,
+    seed: int,
+    output_dir: Path,
+    tokenizer: Any,
+    system_prompt: str,
+) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
+    from datasets import Dataset
+
+    rows = load_jsonl(path)
+    rng = random.Random(seed)
+    rows = rows[:]
+    rng.shuffle(rows)
+    if max_train_examples > 0:
+        rows = rows[:max_train_examples]
+
+    def format_item(item: dict[str, Any]) -> dict[str, str]:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": format_public_user(item)},
+            {"role": "assistant", "content": str(item["response"]).strip()},
+        ]
+        return {
+            "text": tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+        }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    write_jsonl(output_dir / "trace_train_subset.jsonl", rows)
+
+    formatted = Dataset.from_list([format_item(row) for row in rows])
+    return formatted, rows, []
+
+
 def save_metadata(path: Path, metadata: dict[str, Any]) -> None:
     path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -316,7 +357,7 @@ def main() -> None:
             tokenizer=tokenizer,
             system_prompt=args.system_prompt,
         )
-    else:
+    elif args.data_source == "numina":
         train_dataset, train_rows, dev_rows = build_numina_dataset(
             dataset_name=args.numina_dataset,
             max_train_examples=args.max_train_examples,
@@ -326,6 +367,15 @@ def main() -> None:
             system_prompt=args.system_prompt,
             streaming=args.numina_streaming,
             shuffle_buffer=args.numina_shuffle_buffer,
+        )
+    else:
+        train_dataset, train_rows, dev_rows = build_trace_dataset(
+            path=Path(args.trace_data_path),
+            max_train_examples=args.max_train_examples,
+            seed=args.seed,
+            output_dir=output_dir,
+            tokenizer=tokenizer,
+            system_prompt=args.system_prompt,
         )
 
     print("Training examples:", len(train_dataset))
@@ -394,6 +444,7 @@ def main() -> None:
         "model_id": args.model_id,
         "data_source": args.data_source,
         "public_data_path": args.public_data_path if args.data_source == "public" else None,
+        "trace_data_path": args.trace_data_path if args.data_source == "traces" else None,
         "numina_dataset": args.numina_dataset if args.data_source == "numina" else None,
         "numina_streaming": args.numina_streaming if args.data_source == "numina" else None,
         "numina_shuffle_buffer": args.numina_shuffle_buffer if args.data_source == "numina" else None,
