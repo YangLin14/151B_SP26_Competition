@@ -28,6 +28,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=20)
+    parser.add_argument("--repetition-penalty", type=float, default=1.0)
+    parser.add_argument(
+        "--enable-thinking",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Pass enable_thinking=True to Qwen chat template when supported.",
+    )
+    parser.add_argument("--tracker-path", default="docs/QLORA_RESULTS_TRACKER.md")
+    parser.add_argument("--tracker-eval-id", default=None)
+    parser.add_argument("--tracker-notes", default="")
+    parser.add_argument(
+        "--update-tracker",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Update the Markdown QLoRA results tracker after eval.",
+    )
     return parser.parse_args()
 
 
@@ -46,18 +62,6 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
             if line:
                 rows.append(json.loads(line))
     return rows
-
-
-def print_summary(results: list[dict[str, Any]]) -> None:
-    def summarize(name: str, subset: list[dict[str, Any]]) -> None:
-        if not subset:
-            return
-        correct = sum(bool(row["correct"]) for row in subset)
-        print(f"{name:10s}: {correct:4d} / {len(subset):4d} ({correct / len(subset) * 100:.2f}%)")
-
-    summarize("MCQ", [row for row in results if row["is_mcq"]])
-    summarize("Free-form", [row for row in results if not row["is_mcq"]])
-    summarize("Overall", results)
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -81,7 +85,8 @@ def main() -> None:
     repo_root = script_dir.parent
     sys.path.insert(0, str(repo_root))
     sys.path.insert(0, str(script_dir))
-    from qlora_vllm_eval import build_prompt, score_results
+    from qlora_update_tracker import update_tracker
+    from qlora_vllm_eval import build_prompt, print_summary, render_chat_prompt, score_results
 
     if not torch.cuda.is_available():
         raise RuntimeError("No CUDA GPU detected. Transformers eval should run on GPU.")
@@ -115,13 +120,13 @@ def main() -> None:
     for item in eval_data:
         system, user = build_prompt(item)
         prompts.append(
-            tokenizer.apply_chat_template(
+            render_chat_prompt(
+                tokenizer,
                 [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                tokenize=False,
-                add_generation_prompt=True,
+                enable_thinking=args.enable_thinking,
             )
         )
 
@@ -166,6 +171,7 @@ def main() -> None:
                 temperature=args.temperature if do_sample else None,
                 top_p=args.top_p if do_sample else None,
                 top_k=args.top_k if do_sample else None,
+                repetition_penalty=args.repetition_penalty,
                 num_return_sequences=args.k,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id,
@@ -216,6 +222,8 @@ def main() -> None:
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
+        "repetition_penalty": args.repetition_penalty,
+        "enable_thinking": args.enable_thinking,
         "output_path": str(output_path),
         "eval_backend": "transformers",
     }
@@ -224,6 +232,19 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"Saved results to {output_path}")
+
+    if args.update_tracker:
+        try:
+            update_tracker(
+                tracker_path=Path(args.tracker_path),
+                results_path=output_path,
+                metadata_path=output_path.with_suffix(".metadata.json"),
+                eval_id=args.tracker_eval_id,
+                notes=args.tracker_notes,
+            )
+            print(f"Updated tracker: {args.tracker_path}")
+        except Exception as exc:
+            print(f"Warning: failed to update tracker: {exc}")
 
 
 if __name__ == "__main__":

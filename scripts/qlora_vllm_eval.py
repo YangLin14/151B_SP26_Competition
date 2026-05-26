@@ -13,18 +13,17 @@ from typing import Any
 
 
 SYSTEM_PROMPT_FREEFORM = (
-    "You are solving a mathematical free-response problem. "
-    "Solve step by step. "
-    "For every [ANS] placeholder, give the corresponding answer in the same order. "
+    "Please reason step by step, and put your final answer within \\boxed{}. "
+    "If the problem has multiple fill-in-the-blank placeholders, give the corresponding answers in order. "
     "Put all final answers inside one single \\boxed{} expression. "
     "If there are multiple answers, separate them by commas, for example \\boxed{3, 7}. "
     "Do not include units unless the problem explicitly asks for units."
 )
 
 SYSTEM_PROMPT_MCQ = (
-    "You are solving a mathematical multiple-choice problem. "
+    "Please reason step by step, and put your final answer within \\boxed{}. "
     "Solve the problem carefully, then compare your result with the answer choices. "
-    "The final answer must be exactly one capital letter inside \\boxed{}, such as \\boxed{C}. "
+    "Your boxed answer must contain exactly one capital letter, for example \\boxed{C}. "
     "Do not put the numerical value or explanation inside the final box."
 )
 
@@ -42,10 +41,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=20)
+    parser.add_argument("--repetition-penalty", type=float, default=1.0)
     parser.add_argument("--max-model-len", type=int, default=32768)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.75)
     parser.add_argument("--max-num-seqs", type=int, default=8)
+    parser.add_argument("--max-num-batched-tokens", type=int, default=None)
+    parser.add_argument(
+        "--enable-chunked-prefill",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable vLLM chunked prefill. This can improve throughput for long prompts on DSMLP GPUs.",
+    )
+    parser.add_argument(
+        "--enable-thinking",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Pass enable_thinking=True to Qwen chat template when supported.",
+    )
     parser.add_argument("--max-lora-rank", type=int, default=16)
+    parser.add_argument("--tracker-path", default="docs/QLORA_RESULTS_TRACKER.md")
+    parser.add_argument("--tracker-eval-id", default=None)
+    parser.add_argument("--tracker-notes", default="")
+    parser.add_argument(
+        "--update-tracker",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Update the Markdown QLoRA results tracker after eval.",
+    )
     return parser.parse_args()
 
 
@@ -78,14 +100,28 @@ def build_prompt(item: dict[str, Any]) -> tuple[str, str]:
                 f"{chr(ord('A') + idx)}. {value}" for idx, value in enumerate(options)
             ]
         user = (
-            f"{question}\n\nOptions:\n"
+            f"Problem:\n{question}\n\nAnswer choices:\n"
             + "\n".join(option_lines)
             + "\n\nSolve the problem and end with the required boxed letter."
         )
         return SYSTEM_PROMPT_MCQ, user
 
-    user = f"{question}\n\nSolve the problem and end with the required boxed answer."
+    user = f"Problem:\n{question}\n\nSolve the problem and end with the required boxed answer."
     return SYSTEM_PROMPT_FREEFORM, user
+
+
+def render_chat_prompt(tokenizer: Any, messages: list[dict[str, str]], *, enable_thinking: bool) -> str:
+    kwargs = {
+        "tokenize": False,
+        "add_generation_prompt": True,
+    }
+    if enable_thinking:
+        kwargs["enable_thinking"] = True
+    try:
+        return tokenizer.apply_chat_template(messages, **kwargs)
+    except TypeError:
+        kwargs.pop("enable_thinking", None)
+        return tokenizer.apply_chat_template(messages, **kwargs)
 
 
 def extract_boxed(text: str | None) -> str | None:
@@ -275,15 +311,73 @@ def score_results(eval_data: list[dict[str, Any]], per_question_raw: list[list[d
 
 
 def print_summary(results: list[dict[str, Any]]) -> None:
+    def accuracy(subset: list[dict[str, Any]]) -> tuple[int, int, float]:
+        if not subset:
+            return 0, 0, 0.0
+        correct = sum(bool(row["correct"]) for row in subset)
+        return correct, len(subset), correct / len(subset) * 100
+
     def summarize(name: str, subset: list[dict[str, Any]]) -> None:
         if not subset:
             return
-        correct = sum(bool(row["correct"]) for row in subset)
-        print(f"{name:10s}: {correct:4d} / {len(subset):4d} ({correct / len(subset) * 100:.2f}%)")
+        correct, total, pct = accuracy(subset)
+        print(f"{name:10s}: {correct:4d} / {total:4d} ({pct:.2f}%)")
 
-    summarize("MCQ", [row for row in results if row["is_mcq"]])
-    summarize("Free-form", [row for row in results if not row["is_mcq"]])
+    def average_tokens(subset: list[dict[str, Any]]) -> float:
+        token_counts = [
+            token_count
+            for row in subset
+            for token_count in row.get("tokens_per_sample", [])
+            if token_count is not None
+        ]
+        if not token_counts:
+            return 0.0
+        return sum(token_counts) / len(token_counts)
+
+    def boxed_coverage(subset: list[dict[str, Any]]) -> tuple[int, int, float]:
+        if not subset:
+            return 0, 0, 0.0
+        boxed_count = sum(any(boxed is not None for boxed in row.get("samples_boxed", [])) for row in subset)
+        return boxed_count, len(subset), boxed_count / len(subset) * 100
+
+    def truncation_coverage(subset: list[dict[str, Any]]) -> tuple[int, int, float, int, float]:
+        if not subset:
+            return 0, 0, 0.0, 0, 0.0
+        any_truncated = 0
+        all_truncated = 0
+        for row in subset:
+            finish_reasons = row.get("finish_reasons", [])
+            truncated = [reason == "length" for reason in finish_reasons]
+            any_truncated += int(any(truncated))
+            all_truncated += int(bool(truncated) and all(truncated))
+        total = len(subset)
+        return (
+            any_truncated,
+            total,
+            any_truncated / total * 100,
+            all_truncated,
+            all_truncated / total * 100,
+        )
+
+    mcq_rows = [row for row in results if row["is_mcq"]]
+    free_rows = [row for row in results if not row["is_mcq"]]
+
+    summarize("MCQ", mcq_rows)
+    summarize("Free-form", free_rows)
     summarize("Overall", results)
+
+    print()
+    print(f"Average tokens: {average_tokens(results):.2f}")
+    if mcq_rows:
+        correct, total, pct = accuracy(mcq_rows)
+        print(f"MCQ accuracy: {correct} / {total} ({pct:.2f}%)")
+    if free_rows:
+        correct, total, pct = accuracy(free_rows)
+        print(f"Free-form accuracy: {correct} / {total} ({pct:.2f}%)")
+    boxed_count, total, pct = boxed_coverage(results)
+    print(f"Raw outputs with boxed answer: {boxed_count} / {total} ({pct:.2f}%)")
+    any_trunc, total, any_pct, all_trunc, all_pct = truncation_coverage(results)
+    print(f"Raw outputs truncated: any {any_trunc} / {total} ({any_pct:.2f}%), all {all_trunc} / {total} ({all_pct:.2f}%)")
 
 
 def main() -> None:
@@ -297,6 +391,7 @@ def main() -> None:
     from transformers import AutoTokenizer
     from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
     from vllm import LLM, SamplingParams
+    from qlora_update_tracker import update_tracker
 
     if not hasattr(Qwen2Tokenizer, "all_special_tokens_extended"):
         @property
@@ -324,13 +419,13 @@ def main() -> None:
     for item in eval_data:
         system, user = build_prompt(item)
         prompts.append(
-            tokenizer.apply_chat_template(
+            render_chat_prompt(
+                tokenizer,
                 [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                tokenize=False,
-                add_generation_prompt=True,
+                enable_thinking=args.enable_thinking,
             )
         )
 
@@ -344,6 +439,11 @@ def main() -> None:
         "max_num_seqs": args.max_num_seqs,
         "enable_prefix_caching": True,
     }
+    if args.max_num_batched_tokens is not None:
+        llm_kwargs["max_num_batched_tokens"] = args.max_num_batched_tokens
+    if args.enable_chunked_prefill:
+        llm_kwargs["enable_chunked_prefill"] = True
+
     lora_request = None
     if enable_lora:
         from vllm.lora.request import LoRARequest
@@ -363,6 +463,7 @@ def main() -> None:
         temperature=args.temperature,
         top_p=args.top_p,
         top_k=args.top_k,
+        repetition_penalty=args.repetition_penalty,
     )
 
     outputs = model.generate(
@@ -414,6 +515,11 @@ def main() -> None:
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
+        "repetition_penalty": args.repetition_penalty,
+        "enable_thinking": args.enable_thinking,
+        "enable_chunked_prefill": args.enable_chunked_prefill,
+        "max_num_seqs": args.max_num_seqs,
+        "max_num_batched_tokens": args.max_num_batched_tokens,
         "max_lora_rank": args.max_lora_rank if enable_lora else None,
         "output_path": str(output_path),
     }
@@ -422,6 +528,19 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"Saved results to {output_path}")
+
+    if args.update_tracker:
+        try:
+            update_tracker(
+                tracker_path=Path(args.tracker_path),
+                results_path=output_path,
+                metadata_path=output_path.with_suffix(".metadata.json"),
+                eval_id=args.tracker_eval_id,
+                notes=args.tracker_notes,
+            )
+            print(f"Updated tracker: {args.tracker_path}")
+        except Exception as exc:
+            print(f"Warning: failed to update tracker: {exc}")
 
 
 if __name__ == "__main__":

@@ -54,6 +54,10 @@ cat outputs/qlora_sft_public_smoke/run_metadata.json
 
 ## Base Evaluation With vLLM
 
+Eval and scoring scripts update `docs/QLORA_RESULTS_TRACKER.md` automatically.
+Use `--tracker-eval-id` to update a stable row, or `--no-update-tracker` to
+disable tracker updates for a one-off run.
+
 Base control:
 
 ```bash
@@ -61,7 +65,26 @@ python scripts/qlora_vllm_eval.py \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
   --max-tokens 8192 \
-  --output-path results/qlora_base_control_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_base_control_eval_50.jsonl \
+  --tracker-eval-id base_vllm_control_50
+```
+
+Prompt-optimized base control from the prompt branch:
+
+```bash
+python scripts/qlora_vllm_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --k 7 \
+  --max-tokens 32768 \
+  --gpu-memory-utilization 0.92 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 32768 \
+  --enable-chunked-prefill \
+  --enable-thinking \
+  --output-path results/qlora_base_promptopt_vllm_eval_50.jsonl \
+  --tracker-eval-id base_vllm_promptopt_50
 ```
 
 The eval script saves raw generations before scoring:
@@ -76,7 +99,8 @@ If scoring fails after generation, score the raw file without rerunning vLLM:
 python scripts/qlora_score_raw.py \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --raw-path results/qlora_base_control_eval_50.raw.jsonl \
-  --output-path results/qlora_base_control_eval_50.jsonl
+  --output-path results/qlora_base_control_eval_50.jsonl \
+  --tracker-eval-id base_vllm_control_50
 ```
 
 If you hit `ModuleNotFoundError: No module named 'judger'`, update to the latest
@@ -99,7 +123,9 @@ python scripts/qlora_transformers_eval.py \
   --n-eval 50 \
   --max-input-length 2048 \
   --max-new-tokens 2048 \
-  --output-path results/qlora_base_control_transformers_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_base_control_transformers_eval_50.jsonl \
+  --tracker-eval-id base_tf_same_as_numina_5k_50
 ```
 
 Public QLoRA adapter:
@@ -111,7 +137,9 @@ python scripts/qlora_transformers_eval.py \
   --n-eval 50 \
   --max-input-length 2048 \
   --max-new-tokens 2048 \
-  --output-path results/qlora_sft_public_smoke_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_sft_public_smoke_eval_50.jsonl \
+  --tracker-eval-id public_smoke_adapter_tf_50
 ```
 
 ## Public Real Training
@@ -134,7 +162,9 @@ python scripts/qlora_vllm_eval.py \
   --data-path outputs/qlora_sft_public_v1/public_dev_split.jsonl \
   --n-eval 50 \
   --max-tokens 8192 \
-  --output-path results/qlora_public_v1_base_control_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_public_v1_base_control_eval_50.jsonl \
+  --tracker-eval-id public_v1_base_vllm_50
 ```
 
 ```bash
@@ -144,7 +174,9 @@ python scripts/qlora_transformers_eval.py \
   --n-eval 50 \
   --max-input-length 2048 \
   --max-new-tokens 2048 \
-  --output-path results/qlora_public_v1_adapter_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_public_v1_adapter_eval_50.jsonl \
+  --tracker-eval-id public_v1_adapter_tf_50
 ```
 
 ## NuminaMath CoT Training
@@ -179,11 +211,11 @@ Larger run:
 
 ```bash
 python scripts/qlora_sft_train.py \
-  --run-name qlora_sft_numina_5k \
+  --run-name qlora_sft_numina_5k_2048 \
   --data-source numina \
   --max-train-examples 5000 \
   --max-steps -1 \
-  --max-seq-len 4096 \
+  --max-seq-len 2048 \
   --numina-shuffle-buffer 10000
 ```
 
@@ -191,12 +223,43 @@ Evaluate larger adapter:
 
 ```bash
 python scripts/qlora_transformers_eval.py \
-  --adapter-path outputs/qlora_sft_numina_5k/final_adapter \
+  --adapter-path outputs/qlora_sft_numina_5k_2048/final_adapter \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
   --max-input-length 2048 \
   --max-new-tokens 2048 \
-  --output-path results/qlora_numina_5k_eval_50.jsonl
+  --enable-thinking \
+  --output-path results/qlora_numina_5k_2048_transformers_eval_50.jsonl \
+  --tracker-eval-id numina_5k_adapter_tf_50
+```
+
+Larger suggested reasoning run:
+
+```bash
+python scripts/qlora_sft_train.py \
+  --run-name qlora_sft_numina_20k_4096_lr1e-4_r32 \
+  --data-source numina \
+  --max-train-examples 20000 \
+  --max-steps -1 \
+  --max-seq-len 4096 \
+  --learning-rate 1e-4 \
+  --lora-r 32 \
+  --lora-alpha 64 \
+  --numina-shuffle-buffer 50000
+```
+
+Evaluate larger suggested adapter:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --adapter-path outputs/qlora_sft_numina_20k_4096_lr1e-4_r32/final_adapter \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 4096 \
+  --enable-thinking \
+  --output-path results/qlora_numina_20k_4096_lr1e-4_r32_eval_50.jsonl \
+  --tracker-eval-id numina_20k_adapter_tf_4096_50
 ```
 
 ## Read Results
@@ -205,7 +268,34 @@ python scripts/qlora_transformers_eval.py \
 ls -lah results
 head -n 2 results/qlora_sft_public_smoke_eval_50.jsonl
 cat results/qlora_sft_public_smoke_eval_50.metadata.json
+sed -n '1,120p' docs/QLORA_RESULTS_TRACKER.md
 ```
+
+## Public Correct Traces / Self-Distillation
+
+Use this only after a base prompt setting beats the adapter. It runs the base
+model on the public train split, scores generations, and creates candidate rows
+for a future filtered trace dataset.
+
+```bash
+python scripts/qlora_vllm_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_train_split.jsonl \
+  --n-eval -1 \
+  --k 7 \
+  --max-tokens 32768 \
+  --gpu-memory-utilization 0.92 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 32768 \
+  --enable-chunked-prefill \
+  --enable-thinking \
+  --output-path results/public_train_base_promptopt_vllm.jsonl \
+  --tracker-eval-id public_train_base_promptopt_vllm
+```
+
+Then keep rows from `results/public_train_base_promptopt_vllm.jsonl` where
+`correct == true`, `voted` is not null, and generations are not fully truncated.
+The current training script does not yet train directly from filtered traces;
+that needs a `traces` dataset loader or a separate trace-training script.
 
 Decision rule:
 

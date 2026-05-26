@@ -8,6 +8,12 @@ docs/QLORA_WINDOWS_POWERSHELL.md
 
 DSMLP / Linux / WSL / Bash:
 docs/QLORA_DSMLP_BASH.md
+
+QLoRA training/results tracker:
+docs/QLORA_RESULTS_TRACKER.md
+
+High-level QLoRA workflow:
+docs/qlora_workflow.md
 ```
 
 Markdown is preferred over `.txt` for command references because it supports

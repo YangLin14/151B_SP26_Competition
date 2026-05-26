@@ -64,63 +64,57 @@ python scripts/qlora_sft_train.py \
 
 This requires Hugging Face dataset access on the training machine.
 
-## 4. Evaluate the adapter with vLLM
+## 4. Evaluate Base And Adapter
 
-Fast command-line evaluation:
+Use Transformers for fair base-vs-adapter comparison. In our current Qwen3 +
+vLLM environment, vLLM falls back to a Transformers backend that does not support
+LoRA adapters, so vLLM is base-only.
+
+Base control:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
+  --enable-thinking \
+  --output-path results/qlora_base_control_transformers_eval_50.jsonl \
+  --tracker-eval-id base_tf_same_as_numina_5k_50
+```
+
+Adapter eval:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --adapter-path outputs/qlora_sft_numina_5k_2048/final_adapter \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
+  --enable-thinking \
+  --output-path results/qlora_numina_5k_2048_transformers_eval_50.jsonl \
+  --tracker-eval-id numina_5k_adapter_tf_50
+```
+
+Use vLLM only for fast base prompt optimization and future self-distillation
+trace generation:
 
 ```bash
 python scripts/qlora_vllm_eval.py \
-  --adapter-path outputs/qlora_sft_public_smoke/final_adapter \
-  --adapter-name qlora_sft_public_smoke \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
-  --output-path results/qlora_sft_public_smoke_eval_50.jsonl
+  --k 7 \
+  --max-tokens 32768 \
+  --gpu-memory-utilization 0.92 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 32768 \
+  --enable-chunked-prefill \
+  --enable-thinking \
+  --output-path results/qlora_base_promptopt_vllm_eval_50.jsonl \
+  --tracker-eval-id base_vllm_promptopt_50
 ```
 
-Base-model control with the same prompt and scoring:
-
-```bash
-python scripts/qlora_vllm_eval.py \
-  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
-  --n-eval 50 \
-  --output-path results/qlora_base_control_eval_50.jsonl
-```
-
-The adapter run is meaningful only when compared with the base-model control on
-the exact same examples and generation settings.
-
-Notebook evaluation path:
-
-In the vLLM inference notebook, load the adapter:
-
-```python
-from vllm.lora.request import LoRARequest
-
-vllm_model = LLM(
-    model=MODEL_ID,
-    dtype="bfloat16",
-    trust_remote_code=True,
-    gpu_memory_utilization=0.75,
-    max_model_len=32768,
-    max_num_seqs=8,
-    enable_prefix_caching=True,
-    enable_lora=True,
-    max_lora_rank=16,
-)
-
-LORA_REQUEST = LoRARequest(
-    lora_name="qlora_sft_public_smoke",
-    lora_int_id=1,
-    lora_path="outputs/qlora_sft_public_smoke/final_adapter",
-)
-
-outputs = vllm_model.generate(
-    prompts,
-    sampling_params=sampling_params_sc,
-    lora_request=LORA_REQUEST,
-)
-```
-
-Compare the adapter against the same prompt, eval subset, max token budget, and
-sampling settings as the base model. The adapter is worth using only if it beats
-the matching base-model run on held-out questions.
+The tracker is updated automatically after eval. Use `--no-update-tracker` if
+you do not want that, or use `--tracker-eval-id` to overwrite a stable row in
+`docs/QLORA_RESULTS_TRACKER.md`.

@@ -59,33 +59,37 @@ Get-Content outputs\qlora_sft_public_smoke\run_metadata.json
 
 ## Windows Evaluation With Transformers
 
+Eval and scoring scripts update `docs\QLORA_RESULTS_TRACKER.md` automatically.
+Use `--tracker-eval-id` to update a stable row, or `--no-update-tracker` to
+disable tracker updates for a one-off run.
+
 Base control, first 10 examples:
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 10 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_base_control_transformers_eval_10.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 10 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_base_control_transformers_eval_10.jsonl --tracker-eval-id base_tf_smoke_10
 ```
 
 Adapter eval, same examples/settings:
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_smoke/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 10 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_sft_public_smoke_transformers_eval_10.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_smoke/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 10 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_sft_public_smoke_transformers_eval_10.jsonl --tracker-eval-id public_smoke_adapter_tf_10
 ```
 
 If 10 examples work, run 50:
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_base_control_transformers_eval_50.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_base_control_transformers_eval_50.jsonl --tracker-eval-id base_tf_smoke_50
 ```
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_smoke/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_sft_public_smoke_transformers_eval_50.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_smoke/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_sft_public_smoke_transformers_eval_50.jsonl --tracker-eval-id public_smoke_adapter_tf_50
 ```
 
 If generation finished but scoring failed, reuse the raw generations:
 
 ```powershell
 python -m pip install antlr4-python3-runtime==4.11.1
-python -X utf8 scripts/qlora_score_raw.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --raw-path results/qlora_base_control_transformers_eval_10.raw.jsonl --output-path results/qlora_base_control_transformers_eval_10.jsonl
+python -X utf8 scripts/qlora_score_raw.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --raw-path results/qlora_base_control_transformers_eval_10.raw.jsonl --output-path results/qlora_base_control_transformers_eval_10.jsonl --tracker-eval-id base_tf_smoke_10
 ```
 
 ## Public Real Training
@@ -105,11 +109,11 @@ python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_public_v1_2048 --
 Evaluate:
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_v1_1024/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_public_v1_base_control_transformers_eval_50.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --data-path outputs/qlora_sft_public_v1_1024/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_public_v1_base_control_transformers_eval_50.jsonl --tracker-eval-id public_v1_base_tf_50
 ```
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_v1_1024/final_adapter --data-path outputs/qlora_sft_public_v1_1024/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_public_v1_adapter_transformers_eval_50.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_public_v1_1024/final_adapter --data-path outputs/qlora_sft_public_v1_1024/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_public_v1_adapter_transformers_eval_50.jsonl --tracker-eval-id public_v1_adapter_tf_50
 ```
 
 ## NuminaMath CoT Training
@@ -131,7 +135,7 @@ python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_5k_1024 --
 Evaluate:
 
 ```powershell
-python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_numina_5k_1024/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --output-path results/qlora_numina_5k_transformers_eval_50.jsonl
+python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_sft_numina_5k_1024/final_adapter --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --n-eval 50 --max-input-length 1024 --max-new-tokens 1024 --enable-thinking --output-path results/qlora_numina_5k_transformers_eval_50.jsonl --tracker-eval-id numina_5k_adapter_tf_50
 ```
 
 ## Read Results
@@ -140,6 +144,7 @@ python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_s
 Get-ChildItem results
 Get-Content results\qlora_sft_public_smoke_transformers_eval_50.jsonl -TotalCount 2
 Get-Content results\qlora_sft_public_smoke_transformers_eval_50.metadata.json
+Get-Content docs\QLORA_RESULTS_TRACKER.md -TotalCount 120
 ```
 
 Decision rule:

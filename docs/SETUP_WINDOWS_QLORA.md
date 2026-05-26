@@ -1,5 +1,13 @@
 # Windows QLoRA SFT Setup Notes
 
+This is a historical setup/debug note. For current command lines, eval commands,
+tracker usage, and recommended runs, use:
+
+```text
+docs/QLORA_WINDOWS_POWERSHELL.md
+docs/QLORA_RESULTS_TRACKER.md
+```
+
 This note documents the exact setup and fixes used to run the QLoRA SFT smoke test on a Windows machine with an NVIDIA GPU.
 
 Target repo:
