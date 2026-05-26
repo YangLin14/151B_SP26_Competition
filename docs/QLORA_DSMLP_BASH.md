@@ -1,6 +1,10 @@
 # QLoRA DSMLP / Linux Bash Pipeline
 
-Use this on DSMLP, WSL, Linux servers, or Colab-style Linux environments. Unlike native Windows, this path uses `vllm` for evaluation.
+Use this on DSMLP, WSL, Linux servers, or Colab-style Linux environments.
+
+Important: base-model eval can use `vllm`, but Qwen3 currently falls back to
+vLLM's Transformers backend in this environment. That backend does not support
+LoRA, so adapter eval must use `scripts/qlora_transformers_eval.py`.
 
 Project root:
 
@@ -48,7 +52,7 @@ ls -lah outputs/qlora_sft_public_smoke/final_adapter
 cat outputs/qlora_sft_public_smoke/run_metadata.json
 ```
 
-## vLLM Evaluation
+## Base Evaluation With vLLM
 
 Base control:
 
@@ -79,15 +83,34 @@ If you hit `ModuleNotFoundError: No module named 'judger'`, update to the latest
 script and rerun the eval. Older versions did not save raw generations before
 scoring, so that specific failed run cannot be recovered.
 
+Do not use vLLM for LoRA adapter eval in this setup. This fails with:
+
+```text
+AssertionError: TransformersModel does not support LoRA yet.
+```
+
+## Adapter Evaluation With Transformers
+
+Base control with the same Transformers backend/settings:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --n-eval 50 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
+  --output-path results/qlora_base_control_transformers_eval_50.jsonl
+```
+
 Public QLoRA adapter:
 
 ```bash
-python scripts/qlora_vllm_eval.py \
+python scripts/qlora_transformers_eval.py \
   --adapter-path outputs/qlora_sft_public_smoke/final_adapter \
-  --adapter-name qlora_sft_public_smoke \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
-  --max-tokens 8192 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
   --output-path results/qlora_sft_public_smoke_eval_50.jsonl
 ```
 
@@ -115,12 +138,12 @@ python scripts/qlora_vllm_eval.py \
 ```
 
 ```bash
-python scripts/qlora_vllm_eval.py \
+python scripts/qlora_transformers_eval.py \
   --adapter-path outputs/qlora_sft_public_v1/final_adapter \
-  --adapter-name qlora_sft_public_v1 \
   --data-path outputs/qlora_sft_public_v1/public_dev_split.jsonl \
   --n-eval 50 \
-  --max-tokens 8192 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
   --output-path results/qlora_public_v1_adapter_eval_50.jsonl
 ```
 
@@ -143,12 +166,12 @@ python scripts/qlora_sft_train.py \
 Evaluate smoke adapter:
 
 ```bash
-python scripts/qlora_vllm_eval.py \
+python scripts/qlora_transformers_eval.py \
   --adapter-path outputs/qlora_sft_numina_smoke/final_adapter \
-  --adapter-name qlora_sft_numina_smoke \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
-  --max-tokens 8192 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
   --output-path results/qlora_numina_smoke_eval_50.jsonl
 ```
 
@@ -167,12 +190,12 @@ python scripts/qlora_sft_train.py \
 Evaluate larger adapter:
 
 ```bash
-python scripts/qlora_vllm_eval.py \
+python scripts/qlora_transformers_eval.py \
   --adapter-path outputs/qlora_sft_numina_5k/final_adapter \
-  --adapter-name qlora_sft_numina_5k \
   --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
   --n-eval 50 \
-  --max-tokens 8192 \
+  --max-input-length 2048 \
+  --max-new-tokens 2048 \
   --output-path results/qlora_numina_5k_eval_50.jsonl
 ```
 
@@ -189,5 +212,5 @@ Decision rule:
 ```text
 Keep scaling QLoRA only if adapter eval > base control eval on the same held-out examples.
 Do not use train-split accuracy as evidence.
-Do not compare Windows Transformers numbers directly against vLLM numbers unless settings match closely.
+Do not compare adapter Transformers numbers directly against base vLLM numbers unless settings match closely.
 ```
