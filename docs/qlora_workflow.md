@@ -48,6 +48,9 @@ strong reasoning supervision because the public data only has final answers.
 ## 3. CoT SFT run
 
 For a more realistic QLoRA experiment, use a dataset with worked solutions.
+The training script streams NuminaMath by default and materializes only the
+requested subset into memory, then saves that subset under the run output
+directory.
 
 ```bash
 python scripts/qlora_sft_train.py \
@@ -55,7 +58,8 @@ python scripts/qlora_sft_train.py \
   --data-source numina \
   --max-train-examples 5000 \
   --max-steps -1 \
-  --max-seq-len 4096
+  --max-seq-len 4096 \
+  --numina-shuffle-buffer 10000
 ```
 
 This requires Hugging Face dataset access on the training machine.

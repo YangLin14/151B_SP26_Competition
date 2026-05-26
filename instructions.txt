@@ -230,18 +230,25 @@ python scripts/qlora_vllm_eval.py --adapter-path outputs/qlora_sft_public_v1/fin
 This uses worked-solution math data. It is the more realistic SFT path for
 improving reasoning.
 
+The script streams NuminaMath by default, so smoke runs no longer materialize the
+full 859k-example train split. The selected subset is saved to:
+
+```text
+outputs/<run-name>/numina_train_subset.jsonl
+```
+
 Small CoT smoke run:
 
 PowerShell:
 
 ```powershell
-python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_smoke_1024 --data-source numina --max-train-examples 500 --max-steps 50 --max-seq-len 1024
+python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_smoke_1024 --data-source numina --max-train-examples 500 --max-steps 50 --max-seq-len 1024 --numina-shuffle-buffer 10000
 ```
 
 Bash:
 
 ```bash
-python scripts/qlora_sft_train.py --run-name qlora_sft_numina_smoke --data-source numina --max-train-examples 500 --max-steps 50 --max-seq-len 2048
+python scripts/qlora_sft_train.py --run-name qlora_sft_numina_smoke --data-source numina --max-train-examples 500 --max-steps 50 --max-seq-len 2048 --numina-shuffle-buffer 10000
 ```
 
 Larger CoT run:
@@ -249,13 +256,13 @@ Larger CoT run:
 PowerShell:
 
 ```powershell
-python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_5k_1024 --data-source numina --max-train-examples 5000 --max-steps -1 --max-seq-len 1024
+python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_5k_1024 --data-source numina --max-train-examples 5000 --max-steps -1 --max-seq-len 1024 --numina-shuffle-buffer 10000
 ```
 
 Bash:
 
 ```bash
-python scripts/qlora_sft_train.py --run-name qlora_sft_numina_5k --data-source numina --max-train-examples 5000 --max-steps -1 --max-seq-len 4096
+python scripts/qlora_sft_train.py --run-name qlora_sft_numina_5k --data-source numina --max-train-examples 5000 --max-steps -1 --max-seq-len 4096 --numina-shuffle-buffer 10000
 ```
 
 Evaluate a Numina adapter on Windows against the public held-out split from the

@@ -260,7 +260,36 @@ python -X utf8 scripts/qlora_score_raw.py --data-path outputs/qlora_sft_public_s
 
 ---
 
-## 8. Common errors and fixes
+## 8. NuminaMath CoT smoke training on native Windows
+
+Use the streamed Numina path. The command should print a line like:
+
+```text
+Streaming 500 examples from AI-MO/NuminaMath-CoT with shuffle_buffer=10000...
+```
+
+PowerShell:
+
+```powershell
+python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_numina_smoke_1024 --data-source numina --max-train-examples 500 --max-steps 50 --max-seq-len 1024 --numina-shuffle-buffer 10000
+```
+
+If you see this instead, you are using an old script or disabled streaming:
+
+```text
+Generating train split: 0/859494
+```
+
+Stop that run and use the updated script. The selected streamed subset is saved
+to:
+
+```text
+outputs\qlora_sft_numina_smoke_1024\numina_train_subset.jsonl
+```
+
+---
+
+## 9. Common errors and fixes
 
 ### Error: `python` is not recognized
 
@@ -333,7 +362,7 @@ python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_public_smoke --da
 
 ---
 
-## 9. Full clean setup command sequence
+## 10. Full clean setup command sequence
 
 Use this when setting up from scratch:
 
@@ -361,7 +390,7 @@ python -X utf8 scripts/qlora_sft_train.py --run-name qlora_sft_public_smoke --da
 
 ---
 
-## 10. Mental checklist
+## 11. Mental checklist
 
 Before debugging the model, confirm these first:
 

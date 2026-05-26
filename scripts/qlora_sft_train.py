@@ -44,6 +44,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--public-data-path", default="data/public.jsonl")
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--numina-dataset", default="AI-MO/NuminaMath-CoT")
+    parser.add_argument(
+        "--numina-streaming",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Stream NuminaMath examples instead of materializing the full 859k-example train split.",
+    )
+    parser.add_argument(
+        "--numina-shuffle-buffer",
+        type=int,
+        default=10_000,
+        help="Shuffle buffer used when --numina-streaming is enabled.",
+    )
     parser.add_argument("--max-train-examples", type=int, default=200)
 
     parser.add_argument("--max-seq-len", type=int, default=2048)
@@ -190,14 +202,35 @@ def build_numina_dataset(
     dataset_name: str,
     max_train_examples: int,
     seed: int,
+    output_dir: Path,
     tokenizer: Any,
     system_prompt: str,
+    streaming: bool,
+    shuffle_buffer: int,
 ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
-    from datasets import load_dataset
+    from datasets import Dataset, load_dataset
 
-    raw_train = load_dataset(dataset_name, split="train")
-    if max_train_examples > 0 and max_train_examples < len(raw_train):
-        raw_train = raw_train.shuffle(seed=seed).select(range(max_train_examples))
+    if streaming:
+        if max_train_examples <= 0:
+            raise ValueError(
+                "Numina streaming requires --max-train-examples > 0. "
+                "Use a bounded subset such as 500, 5000, or pass --no-numina-streaming for full materialization."
+            )
+
+        print(
+            f"Streaming {max_train_examples} examples from {dataset_name} "
+            f"with shuffle_buffer={shuffle_buffer}..."
+        )
+        stream = load_dataset(dataset_name, split="train", streaming=True)
+        if shuffle_buffer > 1:
+            stream = stream.shuffle(seed=seed, buffer_size=shuffle_buffer)
+        raw_rows = list(stream.take(max_train_examples))
+    else:
+        print(f"Loading full {dataset_name} train split before subsetting...")
+        raw_train = load_dataset(dataset_name, split="train")
+        if max_train_examples > 0 and max_train_examples < len(raw_train):
+            raw_train = raw_train.shuffle(seed=seed).select(range(max_train_examples))
+        raw_rows = list(raw_train)
 
     def format_item(example: dict[str, Any]) -> dict[str, str]:
         messages = [
@@ -213,8 +246,11 @@ def build_numina_dataset(
             )
         }
 
-    formatted = raw_train.map(format_item, remove_columns=raw_train.column_names)
-    return formatted, [], []
+    output_dir.mkdir(parents=True, exist_ok=True)
+    write_jsonl(output_dir / "numina_train_subset.jsonl", raw_rows)
+
+    formatted = Dataset.from_list([format_item(row) for row in raw_rows])
+    return formatted, raw_rows, []
 
 
 def save_metadata(path: Path, metadata: dict[str, Any]) -> None:
@@ -285,8 +321,11 @@ def main() -> None:
             dataset_name=args.numina_dataset,
             max_train_examples=args.max_train_examples,
             seed=args.seed,
+            output_dir=output_dir,
             tokenizer=tokenizer,
             system_prompt=args.system_prompt,
+            streaming=args.numina_streaming,
+            shuffle_buffer=args.numina_shuffle_buffer,
         )
 
     print("Training examples:", len(train_dataset))
@@ -356,6 +395,8 @@ def main() -> None:
         "data_source": args.data_source,
         "public_data_path": args.public_data_path if args.data_source == "public" else None,
         "numina_dataset": args.numina_dataset if args.data_source == "numina" else None,
+        "numina_streaming": args.numina_streaming if args.data_source == "numina" else None,
+        "numina_shuffle_buffer": args.numina_shuffle_buffer if args.data_source == "numina" else None,
         "num_train_examples": len(train_dataset),
         "num_public_dev_examples": len(dev_rows),
         "train_ratio": args.train_ratio if args.data_source == "public" else None,
