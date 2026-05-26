@@ -141,7 +141,7 @@ python -m pip install torch torchvision torchaudio --index-url https://download.
 Install QLoRA / SFT training packages:
 
 ```powershell
-python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn
+python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn antlr4-python3-runtime==4.11.1
 ```
 
 ---
@@ -250,6 +250,14 @@ python -X utf8 scripts/qlora_transformers_eval.py --adapter-path outputs/qlora_s
 The adapter is only useful if it beats the base-model control under the same
 eval settings.
 
+If generation finished but scoring failed, install the scoring dependency and
+score the saved raw generations without rerunning the model:
+
+```powershell
+python -m pip install antlr4-python3-runtime==4.11.1
+python -X utf8 scripts/qlora_score_raw.py --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl --raw-path results/qlora_base_control_transformers_eval_10.raw.jsonl --output-path results/qlora_base_control_transformers_eval_10.jsonl
+```
+
 ---
 
 ## 8. Common errors and fixes
@@ -298,7 +306,7 @@ Fix: Install the minimal dependencies manually:
 ```powershell
 python -m pip install --upgrade pip setuptools wheel numpy
 python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn
+python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn antlr4-python3-runtime==4.11.1
 ```
 
 ---
@@ -340,7 +348,7 @@ uv venv .venv --python 3.11 --seed
 
 python -m pip install --upgrade pip setuptools wheel numpy
 python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn
+python -m pip install transformers datasets accelerate peft trl bitsandbytes sentencepiece protobuf scipy tqdm pandas scikit-learn antlr4-python3-runtime==4.11.1
 
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
