@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import string
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +57,13 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
             if line:
                 rows.append(json.loads(line))
     return rows
+
+
+def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
 def build_prompt(item: dict[str, Any]) -> tuple[str, str]:
@@ -281,6 +289,11 @@ def print_summary(results: list[dict[str, Any]]) -> None:
 def main() -> None:
     args = parse_args()
 
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent
+    sys.path.insert(0, str(repo_root))
+    sys.path.insert(0, str(script_dir))
+
     from transformers import AutoTokenizer
     from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
     from vllm import LLM, SamplingParams
@@ -294,6 +307,12 @@ def main() -> None:
 
     data = load_jsonl(Path(args.data_path))
     eval_data = data if args.n_eval is None or args.n_eval < 0 else data[: args.n_eval]
+
+    if args.output_path is None:
+        suffix = "adapter" if args.adapter_path else "base"
+        output_path = Path(f"results/qlora_eval_{suffix}_{len(eval_data)}.jsonl")
+    else:
+        output_path = Path(args.output_path)
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_id,
@@ -365,19 +384,25 @@ def main() -> None:
             )
         per_question_raw.append(samples)
 
+    raw_path = output_path.with_suffix(".raw.jsonl")
+    write_jsonl(
+        raw_path,
+        [
+            {
+                "id": item.get("id"),
+                "is_mcq": bool(item.get("options")),
+                "gold": item.get("answer"),
+                "samples": samples,
+            }
+            for item, samples in zip(eval_data, per_question_raw)
+        ],
+    )
+    print(f"Saved raw generations to {raw_path}")
+
     results = score_results(eval_data, per_question_raw)
     print_summary(results)
 
-    if args.output_path is None:
-        suffix = "adapter" if enable_lora else "base"
-        output_path = Path(f"results/qlora_eval_{suffix}_{len(eval_data)}.jsonl")
-    else:
-        output_path = Path(args.output_path)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as f:
-        for row in results:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    write_jsonl(output_path, results)
 
     metadata = {
         "model_id": args.model_id,

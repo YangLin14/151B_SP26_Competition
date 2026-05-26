@@ -60,6 +60,25 @@ python scripts/qlora_vllm_eval.py \
   --output-path results/qlora_base_control_eval_50.jsonl
 ```
 
+The eval script saves raw generations before scoring:
+
+```text
+results/qlora_base_control_eval_50.raw.jsonl
+```
+
+If scoring fails after generation, score the raw file without rerunning vLLM:
+
+```bash
+python scripts/qlora_score_raw.py \
+  --data-path outputs/qlora_sft_public_smoke/public_dev_split.jsonl \
+  --raw-path results/qlora_base_control_eval_50.raw.jsonl \
+  --output-path results/qlora_base_control_eval_50.jsonl
+```
+
+If you hit `ModuleNotFoundError: No module named 'judger'`, update to the latest
+script and rerun the eval. Older versions did not save raw generations before
+scoring, so that specific failed run cannot be recovered.
+
 Public QLoRA adapter:
 
 ```bash
