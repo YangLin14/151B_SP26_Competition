@@ -1,0 +1,84 @@
+{
+  "best_global_step": null,
+  "best_metric": null,
+  "best_model_checkpoint": null,
+  "epoch": 2.0,
+  "eval_steps": 500,
+  "global_step": 50,
+  "is_hyper_param_search": false,
+  "is_local_process_zero": true,
+  "is_world_process_zero": true,
+  "log_history": [
+    {
+      "entropy": 1.055118062160909,
+      "epoch": 0.4,
+      "grad_norm": 0.57421875,
+      "learning_rate": 0.00018968727415326884,
+      "loss": 1.4915310859680175,
+      "mean_token_accuracy": 0.6628591623157263,
+      "num_tokens": 22142.0,
+      "step": 10
+    },
+    {
+      "entropy": 0.8918182052671909,
+      "epoch": 0.8,
+      "grad_norm": 0.50390625,
+      "learning_rate": 0.00014422886902190014,
+      "loss": 0.8447688102722168,
+      "mean_token_accuracy": 0.7800687611103058,
+      "num_tokens": 42212.0,
+      "step": 20
+    },
+    {
+      "entropy": 0.8189933562651277,
+      "epoch": 1.2,
+      "grad_norm": 0.41796875,
+      "learning_rate": 8.049096779838719e-05,
+      "loss": 0.7483266353607178,
+      "mean_token_accuracy": 0.7992305591702461,
+      "num_tokens": 65266.0,
+      "step": 30
+    },
+    {
+      "entropy": 0.7246417000889778,
+      "epoch": 1.6,
+      "grad_norm": 0.2890625,
+      "learning_rate": 2.4816019252102273e-05,
+      "loss": 0.6664595127105712,
+      "mean_token_accuracy": 0.8093493230640888,
+      "num_tokens": 88514.0,
+      "step": 40
+    },
+    {
+      "entropy": 0.6810744747519493,
+      "epoch": 2.0,
+      "grad_norm": 0.302734375,
+      "learning_rate": 2.141076761396521e-07,
+      "loss": 0.6780107498168946,
+      "mean_token_accuracy": 0.8168286085128784,
+      "num_tokens": 109292.0,
+      "step": 50
+    }
+  ],
+  "logging_steps": 10,
+  "max_steps": 50,
+  "num_input_tokens_seen": 0,
+  "num_train_epochs": 2,
+  "save_steps": 100,
+  "stateful_callbacks": {
+    "TrainerControl": {
+      "args": {
+        "should_epoch_stop": false,
+        "should_evaluate": false,
+        "should_log": false,
+        "should_save": true,
+        "should_training_stop": true
+      },
+      "attributes": {}
+    }
+  },
+  "total_flos": 2404342302044160.0,
+  "train_batch_size": 1,
+  "trial_name": null,
+  "trial_params": null
+}

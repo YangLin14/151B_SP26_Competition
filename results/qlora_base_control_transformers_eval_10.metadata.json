@@ -1,0 +1,14 @@
+{
+  "model_id": "Qwen/Qwen3-4B-Thinking-2507",
+  "adapter_path": null,
+  "data_path": "outputs/qlora_sft_public_smoke/public_dev_split.jsonl",
+  "n_eval": 10,
+  "k": 1,
+  "max_new_tokens": 1024,
+  "max_input_length": 1024,
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "top_k": 20,
+  "output_path": "results\\qlora_base_control_transformers_eval_10.jsonl",
+  "eval_backend": "transformers"
+}
