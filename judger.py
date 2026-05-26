@@ -12,6 +12,8 @@ random.seed(123)
 
 EXCLUDE_TYPE = ["UOL", "OL"]
 
+SUPPORTS_SIGNAL_TIMEOUT = hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")
+
 class Judger:
     def __init__(self, strict_extract = False):
         # TODO: add strict_extract as args in generate.py or evaluate.py
@@ -647,7 +649,8 @@ class Judger:
         def handler(signum, frame):
             raise Exception("Time out!")
 
-        signal.signal(signal.SIGALRM, handler)
+        if SUPPORTS_SIGNAL_TIMEOUT:
+            signal.signal(signal.SIGALRM, handler)
 
         # TODO: adjust extract answer patterns accordingly
         extracted_pred = self.extract_ans(pred)
@@ -731,7 +734,8 @@ class Judger:
             except:
                 pass
             finally:
-                signal.alarm(0)
+                if SUPPORTS_SIGNAL_TIMEOUT:
+                    signal.alarm(0)
         return False
 
 

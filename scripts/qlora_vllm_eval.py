@@ -181,6 +181,35 @@ def majority_vote(values: list[str | None]) -> tuple[str | None, str]:
     return None, "all_none"
 
 
+def normalize_simple_answer(value: Any) -> str:
+    text = str(value).strip()
+    text = re.sub(r"\\text\{([^{}]*)\}", r"\1", text)
+    text = text.replace("$", "")
+    text = text.replace("\\,", "")
+    text = re.sub(r"\s+", "", text)
+    return text.strip(" .").lower()
+
+
+def simple_item_equal(pred: Any, gold: Any) -> bool:
+    pred_norm = normalize_simple_answer(pred)
+    gold_norm = normalize_simple_answer(gold)
+    if pred_norm == gold_norm:
+        return True
+    try:
+        return abs(float(pred_norm) - float(gold_norm)) <= 1e-8
+    except Exception:
+        return False
+
+
+def simple_answer_match(pred: str | None, gold_list: list[Any]) -> bool:
+    if pred is None:
+        return False
+    pred_items = [item.strip() for item in pred.split(",")]
+    if len(pred_items) != len(gold_list):
+        return False
+    return all(simple_item_equal(pred_item, gold_item) for pred_item, gold_item in zip(pred_items, gold_list))
+
+
 def score_results(eval_data: list[dict[str, Any]], per_question_raw: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
     from judger import Judger
 
@@ -205,14 +234,17 @@ def score_results(eval_data: list[dict[str, Any]], per_question_raw: list[list[d
             gold_list = gold if isinstance(gold, list) else [gold]
             pred_for_judge = f"\\boxed{{{voted}}}" if voted is not None else rep_text
             pred_letter = None
-            try:
-                correct = judger.auto_judge(
-                    pred=pred_for_judge,
-                    gold=gold_list,
-                    options=[[]] * len(gold_list),
-                )
-            except Exception:
-                correct = False
+            if simple_answer_match(voted, gold_list):
+                correct = True
+            else:
+                try:
+                    correct = judger.auto_judge(
+                        pred=pred_for_judge,
+                        gold=gold_list,
+                        options=[[]] * len(gold_list),
+                    )
+                except Exception:
+                    correct = False
 
         results.append(
             {
