@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import re
 import string
@@ -150,6 +151,39 @@ def extract_boxed(text: str | None) -> str | None:
             chars.append(ch)
         i += 1
     return None
+
+
+def extract_thinking_text(text: str | None) -> str | None:
+    if not text:
+        return None
+    end = text.find("</think>")
+    if end == -1:
+        return None
+    start = text.find("<think>")
+    if start != -1 and start < end:
+        start += len("<think>")
+    else:
+        start = 0
+    return text[start:end].strip()
+
+
+def has_think_end(text: str | None) -> bool:
+    return bool(text and "</think>" in text)
+
+
+def annotate_sample_metadata(sample: dict[str, Any], tokenizer: Any) -> dict[str, Any]:
+    text = str(sample.get("text") or "").strip()
+    annotated = dict(sample)
+    annotated["text"] = text
+    annotated["has_think_end"] = has_think_end(text)
+    if annotated.get("thinking_n_tokens") is None:
+        thinking_text = extract_thinking_text(text)
+        annotated["thinking_n_tokens"] = (
+            len(tokenizer.encode(thinking_text, add_special_tokens=False))
+            if thinking_text is not None
+            else None
+        )
+    return annotated
 
 
 def allowed_letters(item: dict[str, Any]) -> str:
@@ -338,9 +372,12 @@ def compute_generation_summary(raw_rows: list[dict[str, Any]]) -> dict[str, Any]
     total_tokens = 0
     boxed_any = 0
     boxed_all = 0
+    think_end_any = 0
+    think_end_all = 0
     retried = 0
     truncated_any = 0
     truncated_all = 0
+    thinking_tokens: list[int] = []
     vote_status_counts: dict[str, int] = {}
     sample_count_counts: dict[str, int] = {}
 
@@ -354,6 +391,19 @@ def compute_generation_summary(raw_rows: list[dict[str, Any]]) -> dict[str, Any]
             boxed_any += 1
         if boxed_flags and all(boxed_flags):
             boxed_all += 1
+
+        think_end_flags = [
+            bool(sample.get("has_think_end", has_think_end(sample.get("text"))))
+            for sample in samples
+        ]
+        if any(think_end_flags):
+            think_end_any += 1
+        if think_end_flags and all(think_end_flags):
+            think_end_all += 1
+
+        for sample in samples:
+            if "thinking_n_tokens" in sample and sample.get("thinking_n_tokens") is not None:
+                thinking_tokens.append(int(sample["thinking_n_tokens"]))
 
         truncated_flags = [sample.get("finish_reason") == "length" for sample in samples]
         if any(truncated_flags):
@@ -370,6 +420,13 @@ def compute_generation_summary(raw_rows: list[dict[str, Any]]) -> dict[str, Any]
         sample_count_key = str(len(samples))
         sample_count_counts[sample_count_key] = sample_count_counts.get(sample_count_key, 0) + 1
 
+    def percentile(values: list[int], q: float) -> float:
+        if not values:
+            return 0.0
+        ordered = sorted(values)
+        idx = min(len(ordered) - 1, max(0, math.ceil(q * len(ordered)) - 1))
+        return float(ordered[idx])
+
     return {
         "num_questions": total,
         "total_samples": total_samples,
@@ -377,6 +434,24 @@ def compute_generation_summary(raw_rows: list[dict[str, Any]]) -> dict[str, Any]
         "avg_tokens_per_sample": total_tokens / total_samples if total_samples else 0.0,
         "boxed_any": {"count": boxed_any, "total": total, "rate": boxed_any / total if total else 0.0},
         "boxed_all": {"count": boxed_all, "total": total, "rate": boxed_all / total if total else 0.0},
+        "think_end_any": {
+            "count": think_end_any,
+            "total": total,
+            "rate": think_end_any / total if total else 0.0,
+        },
+        "think_end_all": {
+            "count": think_end_all,
+            "total": total,
+            "rate": think_end_all / total if total else 0.0,
+        },
+        "thinking_tokens": {
+            "sample_count": len(thinking_tokens),
+            "avg": sum(thinking_tokens) / len(thinking_tokens) if thinking_tokens else 0.0,
+            "p50": percentile(thinking_tokens, 0.50),
+            "p90": percentile(thinking_tokens, 0.90),
+            "p95": percentile(thinking_tokens, 0.95),
+            "max": max(thinking_tokens) if thinking_tokens else 0,
+        },
         "truncated_any": {
             "count": truncated_any,
             "total": total,
@@ -408,6 +483,9 @@ def print_generation_summary(summary: dict[str, Any]) -> None:
 
     boxed_any = summary["boxed_any"]
     boxed_all = summary["boxed_all"]
+    think_end_any = summary["think_end_any"]
+    think_end_all = summary["think_end_all"]
+    thinking_tokens = summary["thinking_tokens"]
     truncated_any = summary["truncated_any"]
     truncated_all = summary["truncated_all"]
     retried = summary["retried"]
@@ -419,6 +497,22 @@ def print_generation_summary(summary: dict[str, Any]) -> None:
     print(
         "Boxed coverage all samples: "
         f"{boxed_all['count']} / {boxed_all['total']} ({_fmt_pct(boxed_all['rate'])})"
+    )
+    print(
+        "Think end any sample: "
+        f"{think_end_any['count']} / {think_end_any['total']} ({_fmt_pct(think_end_any['rate'])})"
+    )
+    print(
+        "Think end all samples: "
+        f"{think_end_all['count']} / {think_end_all['total']} ({_fmt_pct(think_end_all['rate'])})"
+    )
+    print(
+        "Thinking tokens/sample: "
+        f"avg={thinking_tokens['avg']:.2f}, "
+        f"p50={thinking_tokens['p50']:.0f}, "
+        f"p90={thinking_tokens['p90']:.0f}, "
+        f"p95={thinking_tokens['p95']:.0f}, "
+        f"max={thinking_tokens['max']}"
     )
     print(
         "Truncated any sample: "
@@ -478,11 +572,16 @@ def print_checkpoint_summary(
 ) -> None:
     summary = compute_generation_summary(raw_rows)
     boxed_any = summary["boxed_any"]
+    think_end_any = summary["think_end_any"]
+    thinking_tokens = summary["thinking_tokens"]
     truncated_any = summary["truncated_any"]
     retried = summary["retried"]
     print(
         f"{label}: health "
         f"boxed_any={boxed_any['count']}/{boxed_any['total']} ({_fmt_pct(boxed_any['rate'])}), "
+        f"think_end_any={think_end_any['count']}/{think_end_any['total']} ({_fmt_pct(think_end_any['rate'])}), "
+        f"thinking_avg={thinking_tokens['avg']:.0f}, "
+        f"thinking_p95={thinking_tokens['p95']:.0f}, "
         f"truncated_any={truncated_any['count']}/{truncated_any['total']} ({_fmt_pct(truncated_any['rate'])}), "
         f"retried={retried['count']}/{retried['total']} ({_fmt_pct(retried['rate'])}), "
         f"vote_statuses={summary['vote_status_counts']}"
@@ -636,7 +735,10 @@ def run_inference(
                     continue
                 samples = row.get("samples") or []
                 if samples:
-                    per_question_samples[idx] = samples
+                    per_question_samples[idx] = [
+                        annotate_sample_metadata(sample, tokenizer)
+                        for sample in samples
+                    ]
                     if row.get("retried"):
                         retried_indices.add(idx)
             print(
@@ -670,14 +772,18 @@ def run_inference(
             )
             chunk_outputs = llm.generate(chunk_prompts, sampling_params=params)
             for idx, output in zip(chunk_indices, chunk_outputs):
-                samples = [
-                    {
-                        "text": sample.text.strip(),
-                        "finish_reason": sample.finish_reason,
-                        "n_tokens": len(sample.token_ids),
-                    }
-                    for sample in output.outputs
-                ]
+                samples = []
+                for sample in output.outputs:
+                    samples.append(
+                        annotate_sample_metadata(
+                            {
+                                "text": sample.text,
+                                "finish_reason": sample.finish_reason,
+                                "n_tokens": len(sample.token_ids),
+                            },
+                            tokenizer,
+                        )
+                    )
                 generated[idx] = samples
                 if append and idx in per_question_samples:
                     per_question_samples[idx].extend(samples)

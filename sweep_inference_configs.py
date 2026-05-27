@@ -94,6 +94,9 @@ def flatten_result(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str
 
     boxed_any = gen.get("boxed_any") or {}
     boxed_all = gen.get("boxed_all") or {}
+    think_end_any = gen.get("think_end_any") or {}
+    think_end_all = gen.get("think_end_all") or {}
+    thinking_tokens = gen.get("thinking_tokens") or {}
     trunc_any = gen.get("truncated_any") or {}
     trunc_all = gen.get("truncated_all") or {}
     retried = gen.get("retried") or {}
@@ -114,6 +117,13 @@ def flatten_result(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str
         "free_accuracy_pct": pct(free_form.get("accuracy")),
         "boxed_any_pct": pct(boxed_any.get("rate")),
         "boxed_all_pct": pct(boxed_all.get("rate")),
+        "think_end_any_pct": pct(think_end_any.get("rate")),
+        "think_end_all_pct": pct(think_end_all.get("rate")),
+        "thinking_tokens_avg": f"{thinking_tokens.get('avg', 0.0):.4f}",
+        "thinking_tokens_p50": f"{thinking_tokens.get('p50', 0.0):.4f}",
+        "thinking_tokens_p90": f"{thinking_tokens.get('p90', 0.0):.4f}",
+        "thinking_tokens_p95": f"{thinking_tokens.get('p95', 0.0):.4f}",
+        "thinking_tokens_max": thinking_tokens.get("max", 0),
         "truncated_any_pct": pct(trunc_any.get("rate")),
         "truncated_all_pct": pct(trunc_all.get("rate")),
         "retried_pct": pct(retried.get("rate")),
@@ -176,6 +186,8 @@ def write_summary(output_dir: Path, rows: list[dict[str, Any]]) -> None:
         print(f"MCQ accuracy: {best['mcq_accuracy_pct']}%")
         print(f"Free-form accuracy: {best['free_accuracy_pct']}%")
         print(f"boxed_any: {best['boxed_any_pct']}%")
+        print(f"think_end_any: {best['think_end_any_pct']}%")
+        print(f"thinking_tokens_p95: {best['thinking_tokens_p95']}")
         print(f"truncated_any: {best['truncated_any_pct']}%")
         print("\nUse this private command shape with the winning parameters:")
         print(

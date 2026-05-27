@@ -138,8 +138,8 @@ results/sweeps/public_inference/summary.json
 ```
 
 The best config is selected primarily by public overall accuracy, with
-boxed-answer coverage, truncation rate, and retry rate used as secondary
-diagnostics.
+boxed-answer coverage, `</think>` completion rate, thinking-token p95,
+truncation rate, and retry rate used as secondary diagnostics.
 
 The sweep runs each candidate in a separate Python subprocess rather than
 calling all candidates inside one long-lived process. This matters on A30:

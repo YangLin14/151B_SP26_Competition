@@ -164,6 +164,8 @@ detect problems:
 
 ```text
 Boxed coverage any sample   should be high; low values mean final answers are not extractable.
+Think end any sample        should be high; low values mean max_tokens is cutting off reasoning.
+Thinking tokens/sample      avg/p95/max help choose the next max_tokens budget.
 Truncated any sample        high values mean max_tokens is too small.
 Adaptive retry used         high values mean many first-pass votes were low confidence.
 Vote statuses               majority is best; all_none and tie_first are warning signs.
@@ -325,6 +327,9 @@ After every checkpoint, the script prints compact health metrics:
 
 ```text
 boxed_any
+think_end_any
+thinking_avg
+thinking_p95
 truncated_any
 retried
 vote_statuses
