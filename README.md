@@ -111,6 +111,7 @@ For a quick smoke sweep, add `--limit 50`.
 |---|---|
 | `run_inference.py` | Final single-entry inference pipeline |
 | `sweep_inference_configs.py` | Public validation sweep for inference settings |
+| `merge_submission_shards.py` | Merge partial private CSV shards after split DSMLP runs |
 | `docs/A30_RUNBOOK.md` | Complete A30 setup, run, and validation commands |
 | `docs/FINAL_PIPELINE_DESIGN.md` | Method design, compliance notes, and hyperparameters |
 | `docs/GRADESCOPE_SUBMISSION_CHECKLIST.md` | Final submission checklist |

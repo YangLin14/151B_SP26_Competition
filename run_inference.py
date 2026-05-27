@@ -63,6 +63,18 @@ def write_jsonl(path: str | Path, rows: list[dict[str, Any]]) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def load_raw_checkpoint(path: str | Path) -> dict[int, dict[str, Any]]:
+    checkpoint_path = Path(path)
+    if not checkpoint_path.exists():
+        return {}
+    rows = load_jsonl(checkpoint_path)
+    checkpoint: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        if "id" in row:
+            checkpoint[int(row["id"])] = row
+    return checkpoint
+
+
 def build_prompt(item: dict[str, Any]) -> tuple[str, str]:
     question = str(item["question"]).strip()
     options = item.get("options")
@@ -245,6 +257,28 @@ def should_retry(vote_info: dict[str, Any], samples: list[dict[str, Any]]) -> bo
     if vote_info.get("vote_status") in {"all_none", "tie_first"}:
         return True
     return any(sample.get("finish_reason") == "length" for sample in samples)
+
+
+def build_raw_rows(
+    data: list[dict[str, Any]],
+    per_question_samples: dict[int, list[dict[str, Any]]],
+    retried_indices: set[int],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for idx, item in enumerate(data):
+        if idx not in per_question_samples:
+            continue
+        samples = per_question_samples[idx]
+        sample_texts = [sample["text"] for sample in samples]
+        _, vote_info = select_representative_response(item, sample_texts)
+        rows.append({
+            "id": item["id"],
+            "is_mcq": bool(item.get("options")),
+            "samples": samples,
+            "retried": idx in retried_indices,
+            **vote_info,
+        })
+    return rows
 
 
 def score_public_if_available(
@@ -437,6 +471,9 @@ def run_inference(
     raw_output_path: str | None = None,
     metadata_path: str | None = None,
     limit: int | None = None,
+    start_index: int = 0,
+    end_index: int | None = None,
+    resume: bool = True,
 ) -> str:
     """Run the full end-to-end pipeline and write a Kaggle submission CSV.
 
@@ -457,9 +494,16 @@ def run_inference(
         Qwen2Tokenizer.all_special_tokens_extended = _all_special_tokens_extended
 
     start_time = time.time()
-    data = load_jsonl(data_path)
+    all_data = load_jsonl(data_path)
     if limit is not None:
-        data = data[:limit]
+        all_data = all_data[:limit]
+    if start_index < 0:
+        raise ValueError("start_index must be non-negative")
+    if end_index is None:
+        end_index = len(all_data)
+    if end_index < start_index:
+        raise ValueError("end_index must be greater than or equal to start_index")
+    data = all_data[start_index:end_index]
     if not data:
         raise ValueError(f"No rows loaded from {data_path}")
     if generation_chunk_size <= 0:
@@ -473,6 +517,12 @@ def run_inference(
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if raw_output_path is None:
+        raw_output_path = str(out_path.with_suffix(".raw.jsonl"))
+    raw_checkpoint_path = Path(raw_output_path)
 
     prompts = []
     for item in data:
@@ -514,11 +564,38 @@ def run_inference(
         repetition_penalty=repetition_penalty,
     )
 
+    per_question_samples: dict[int, list[dict[str, Any]]] = {}
+    retried_indices: set[int] = set()
+
+    if resume:
+        checkpoint = load_raw_checkpoint(raw_checkpoint_path)
+        if checkpoint:
+            id_to_local_idx = {int(item["id"]): idx for idx, item in enumerate(data)}
+            for qid, row in checkpoint.items():
+                idx = id_to_local_idx.get(qid)
+                if idx is None:
+                    continue
+                samples = row.get("samples") or []
+                if samples:
+                    per_question_samples[idx] = samples
+                    if row.get("retried"):
+                        retried_indices.add(idx)
+            print(
+                f"Resume: loaded {len(per_question_samples)} completed questions "
+                f"from {raw_checkpoint_path}"
+            )
+
+    def save_checkpoint(label: str) -> None:
+        checkpoint_rows = build_raw_rows(data, per_question_samples, retried_indices)
+        write_jsonl(raw_checkpoint_path, checkpoint_rows)
+        print(f"{label}: checkpointed {len(checkpoint_rows)} rows to {raw_checkpoint_path}")
+
     def generate_for_indices(
         indices: list[int],
         params: Any,
         *,
         label: str,
+        append: bool = False,
     ) -> dict[int, list[dict[str, Any]]]:
         generated: dict[int, list[dict[str, Any]]] = {}
         total = len(indices)
@@ -531,7 +608,7 @@ def run_inference(
             )
             chunk_outputs = llm.generate(chunk_prompts, sampling_params=params)
             for idx, output in zip(chunk_indices, chunk_outputs):
-                generated[idx] = [
+                samples = [
                     {
                         "text": sample.text.strip(),
                         "finish_reason": sample.finish_reason,
@@ -539,19 +616,35 @@ def run_inference(
                     }
                     for sample in output.outputs
                 ]
+                generated[idx] = samples
+                if append and idx in per_question_samples:
+                    per_question_samples[idx].extend(samples)
+                else:
+                    per_question_samples[idx] = samples
+            save_checkpoint(label)
         return generated
 
-    print(f"Loaded {len(data)} questions from {data_path}")
+    print(f"Loaded {len(all_data)} total questions from {data_path}")
+    print(f"Selected indices [{start_index}, {end_index}) -> {len(data)} questions")
     print(f"Generating with model={model_id}, k={k}, max_tokens={max_tokens}")
-    per_question_samples = generate_for_indices(
-        list(range(len(data))),
-        sampling_params,
-        label="Initial generation",
-    )
+    missing_initial_indices = [
+        idx for idx in range(len(data))
+        if len(per_question_samples.get(idx, [])) < k
+    ]
+    if missing_initial_indices:
+        generate_for_indices(
+            missing_initial_indices,
+            sampling_params,
+            label="Initial generation",
+        )
+    else:
+        print("Initial generation: all selected questions already completed.")
 
     retry_indices: list[int] = []
     if retry_bad and retry_k > 0:
         for idx, item in enumerate(data):
+            if idx in retried_indices:
+                continue
             sample_texts = [sample["text"] for sample in per_question_samples[idx]]
             _, vote_info = select_representative_response(item, sample_texts)
             if should_retry(vote_info, per_question_samples[idx]):
@@ -566,9 +659,10 @@ def run_inference(
             retry_indices,
             retry_sampling_params,
             label="Adaptive retry",
+            append=True,
         )
-        for idx, samples in retry_samples.items():
-            per_question_samples[idx].extend(samples)
+        retried_indices.update(retry_samples.keys())
+        save_checkpoint("Adaptive retry")
     else:
         print("Adaptive retry: no low-confidence questions found.")
 
@@ -577,6 +671,8 @@ def run_inference(
     selected_responses: list[str] = []
 
     for idx, item in enumerate(data):
+        if idx not in per_question_samples:
+            raise RuntimeError(f"Missing generated samples for local index {idx}, id={item.get('id')}")
         samples = per_question_samples[idx]
         sample_texts = [sample["text"] for sample in samples]
         selected, vote_info = select_representative_response(item, sample_texts)
@@ -586,19 +682,15 @@ def run_inference(
             "id": item["id"],
             "is_mcq": bool(item.get("options")),
             "samples": samples,
-            "retried": idx in set(retry_indices),
+            "retried": idx in retried_indices,
             **vote_info,
         })
 
-    out_path = Path(output_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["id", "response"], quoting=csv.QUOTE_ALL)
         writer.writeheader()
         writer.writerows(submissions)
 
-    if raw_output_path is None:
-        raw_output_path = str(out_path.with_suffix(".raw.jsonl"))
     write_jsonl(raw_output_path, raw_rows)
 
     elapsed = time.time() - start_time
@@ -629,6 +721,9 @@ def run_inference(
         "retry_max_tokens": retry_max_tokens,
         "num_retried": len(retry_indices),
         "limit": limit,
+        "start_index": start_index,
+        "end_index": end_index,
+        "resume": resume,
         "elapsed_seconds": elapsed,
         "generation_summary": generation_summary,
         "score_summary": score_summary,
@@ -675,6 +770,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw-output-path", default=None)
     parser.add_argument("--metadata-path", default=None)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--start-index", type=int, default=0)
+    parser.add_argument("--end-index", type=int, default=None)
+    parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     return parser.parse_args()
 
 
@@ -704,6 +802,9 @@ def main() -> None:
         raw_output_path=args.raw_output_path,
         metadata_path=args.metadata_path,
         limit=args.limit,
+        start_index=args.start_index,
+        end_index=args.end_index,
+        resume=args.resume,
     )
 
 

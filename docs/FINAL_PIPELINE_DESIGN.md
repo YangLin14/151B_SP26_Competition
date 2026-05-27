@@ -74,6 +74,16 @@ id,response
 The submitted `response` field is a full model output trace, not a synthetic
 answer-only string.
 
+For DSMLP wall-time limits, `run_inference.py` supports:
+
+- per-chunk raw JSONL checkpoints
+- automatic resume from `--raw-output-path`
+- `--start-index` / `--end-index` private-set shards
+- `merge_submission_shards.py` for combining partial CSVs
+
+This keeps the final result reproducible while allowing multiple DSMLP sessions
+to complete the private set.
+
 ## Final A30 Command
 
 The final private run that has been confirmed to start successfully on the A30

@@ -311,6 +311,75 @@ python run_inference.py \
   --no-retry-bad
 ```
 
+## 6.1 DSMLP 8-Hour Limit: Checkpoint And Split Runs
+
+DSMLP pods can terminate after the wall-time deadline. `run_inference.py` now
+checkpoints after every generation chunk by writing the raw JSONL file. If a run
+is killed, rerun the exact same command with the same `--raw-output-path`; the
+script will resume completed questions by default.
+
+For long private inference, split the private set into 8 shards. Each shard
+produces a partial CSV and raw checkpoint. If a shard is interrupted, rerun the
+same command for that shard.
+
+Shard boundaries for the current 943-question private set:
+
+```text
+part 1:   0-118
+part 2: 118-236
+part 3: 236-354
+part 4: 354-472
+part 5: 472-590
+part 6: 590-708
+part 7: 708-826
+part 8: 826-943
+```
+
+Template:
+
+```bash
+python run_inference.py \
+  --data-path data/private.jsonl \
+  --output-path results/submission_part_START_END.csv \
+  --raw-output-path results/submission_part_START_END.raw.jsonl \
+  --metadata-path results/submission_part_START_END.metadata.json \
+  --start-index START \
+  --end-index END \
+  --k 5 \
+  --max-tokens 4096 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.72 \
+  --max-num-seqs 4 \
+  --max-num-batched-tokens 8192 \
+  --no-enable-prefix-caching \
+  --generation-chunk-size 32 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
+```
+
+Concrete commands:
+
+```bash
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_000_118.csv --raw-output-path results/submission_part_000_118.raw.jsonl --metadata-path results/submission_part_000_118.metadata.json --start-index 0 --end-index 118 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_118_236.csv --raw-output-path results/submission_part_118_236.raw.jsonl --metadata-path results/submission_part_118_236.metadata.json --start-index 118 --end-index 236 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_236_354.csv --raw-output-path results/submission_part_236_354.raw.jsonl --metadata-path results/submission_part_236_354.metadata.json --start-index 236 --end-index 354 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_354_472.csv --raw-output-path results/submission_part_354_472.raw.jsonl --metadata-path results/submission_part_354_472.metadata.json --start-index 354 --end-index 472 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_472_590.csv --raw-output-path results/submission_part_472_590.raw.jsonl --metadata-path results/submission_part_472_590.metadata.json --start-index 472 --end-index 590 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_590_708.csv --raw-output-path results/submission_part_590_708.raw.jsonl --metadata-path results/submission_part_590_708.metadata.json --start-index 590 --end-index 708 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_708_826.csv --raw-output-path results/submission_part_708_826.raw.jsonl --metadata-path results/submission_part_708_826.metadata.json --start-index 708 --end-index 826 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_826_943.csv --raw-output-path results/submission_part_826_943.raw.jsonl --metadata-path results/submission_part_826_943.metadata.json --start-index 826 --end-index 943 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+```
+
+After all shards finish, merge them:
+
+```bash
+python merge_submission_shards.py \
+  --private-path data/private.jsonl \
+  --pattern "results/submission_part_*.csv" \
+  --output-path results/submission_final.csv
+```
+
 ## 7. Validate Final CSV
 
 ```bash
