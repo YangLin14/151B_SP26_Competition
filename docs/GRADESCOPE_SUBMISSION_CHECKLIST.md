@@ -66,7 +66,11 @@ python run_inference.py \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
 ```
 
 Then validate:

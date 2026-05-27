@@ -97,7 +97,11 @@ python run_inference.py \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
 ```
 
 Inspect outputs:
@@ -133,7 +137,11 @@ python run_inference.py \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
 ```
 
 Read the public score:
@@ -183,8 +191,16 @@ python run_inference.py \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
 ```
+
+This is still one reproducible `run_inference()` pipeline. The chunking is
+internal: it produces one final CSV, while avoiding one giant vLLM request batch.
+The retry pass only adds samples for low-confidence questions.
 
 If the A30 still runs out of memory, use the emergency single-sample fallback:
 
@@ -198,7 +214,9 @@ python run_inference.py \
   --gpu-memory-utilization 0.60 \
   --max-num-seqs 1 \
   --max-num-batched-tokens 4096 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 32 \
+  --no-retry-bad
 ```
 
 ## 7. Validate Final CSV
@@ -246,7 +264,7 @@ Record these values in the final README:
 GPU type: NVIDIA A30
 Model: Qwen/Qwen3-4B-Thinking-2507
 Inference backend: vLLM
-Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 3 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching
+Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 3 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 64 --retry-bad --retry-k 2 --retry-max-tokens 4096
 Approx total generation time: copy from results/submission_final.metadata.json elapsed_seconds
 Model weights: downloaded from HuggingFace Hub automatically by Transformers/vLLM cache
 Single entry point: run_inference.run_inference()

@@ -241,6 +241,12 @@ def select_representative_response(
     }
 
 
+def should_retry(vote_info: dict[str, Any], samples: list[dict[str, Any]]) -> bool:
+    if vote_info.get("vote_status") in {"all_none", "tie_first"}:
+        return True
+    return any(sample.get("finish_reason") == "length" for sample in samples)
+
+
 def score_public_if_available(
     data: list[dict[str, Any]],
     selected_responses: list[str],
@@ -310,6 +316,10 @@ def run_inference(
     enable_chunked_prefill: bool = True,
     enable_prefix_caching: bool = False,
     enable_thinking: bool = True,
+    generation_chunk_size: int = 64,
+    retry_bad: bool = True,
+    retry_k: int = 2,
+    retry_max_tokens: int = 4096,
     raw_output_path: str | None = None,
     metadata_path: str | None = None,
     limit: int | None = None,
@@ -338,6 +348,8 @@ def run_inference(
         data = data[:limit]
     if not data:
         raise ValueError(f"No rows loaded from {data_path}")
+    if generation_chunk_size <= 0:
+        raise ValueError("generation_chunk_size must be positive")
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_id,
@@ -379,31 +391,88 @@ def run_inference(
         top_k=top_k,
         repetition_penalty=repetition_penalty,
     )
+    retry_sampling_params = SamplingParams(
+        n=retry_k,
+        max_tokens=retry_max_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+        repetition_penalty=repetition_penalty,
+    )
+
+    def generate_for_indices(
+        indices: list[int],
+        params: Any,
+        *,
+        label: str,
+    ) -> dict[int, list[dict[str, Any]]]:
+        generated: dict[int, list[dict[str, Any]]] = {}
+        total = len(indices)
+        for start in range(0, total, generation_chunk_size):
+            chunk_indices = indices[start:start + generation_chunk_size]
+            chunk_prompts = [prompts[idx] for idx in chunk_indices]
+            print(
+                f"{label}: chunk {start // generation_chunk_size + 1} "
+                f"({start + 1}-{start + len(chunk_indices)} / {total})"
+            )
+            chunk_outputs = llm.generate(chunk_prompts, sampling_params=params)
+            for idx, output in zip(chunk_indices, chunk_outputs):
+                generated[idx] = [
+                    {
+                        "text": sample.text.strip(),
+                        "finish_reason": sample.finish_reason,
+                        "n_tokens": len(sample.token_ids),
+                    }
+                    for sample in output.outputs
+                ]
+        return generated
 
     print(f"Loaded {len(data)} questions from {data_path}")
     print(f"Generating with model={model_id}, k={k}, max_tokens={max_tokens}")
-    outputs = llm.generate(prompts, sampling_params=sampling_params)
+    per_question_samples = generate_for_indices(
+        list(range(len(data))),
+        sampling_params,
+        label="Initial generation",
+    )
+
+    retry_indices: list[int] = []
+    if retry_bad and retry_k > 0:
+        for idx, item in enumerate(data):
+            sample_texts = [sample["text"] for sample in per_question_samples[idx]]
+            _, vote_info = select_representative_response(item, sample_texts)
+            if should_retry(vote_info, per_question_samples[idx]):
+                retry_indices.append(idx)
+
+    if retry_indices:
+        print(
+            f"Adaptive retry: regenerating {len(retry_indices)} low-confidence "
+            f"questions with k={retry_k}, max_tokens={retry_max_tokens}"
+        )
+        retry_samples = generate_for_indices(
+            retry_indices,
+            retry_sampling_params,
+            label="Adaptive retry",
+        )
+        for idx, samples in retry_samples.items():
+            per_question_samples[idx].extend(samples)
+    else:
+        print("Adaptive retry: no low-confidence questions found.")
 
     submissions: list[dict[str, Any]] = []
     raw_rows: list[dict[str, Any]] = []
     selected_responses: list[str] = []
 
-    for item, output in zip(data, outputs):
-        sample_texts = [sample.text.strip() for sample in output.outputs]
+    for idx, item in enumerate(data):
+        samples = per_question_samples[idx]
+        sample_texts = [sample["text"] for sample in samples]
         selected, vote_info = select_representative_response(item, sample_texts)
         selected_responses.append(selected)
         submissions.append({"id": item["id"], "response": selected})
         raw_rows.append({
             "id": item["id"],
             "is_mcq": bool(item.get("options")),
-            "samples": [
-                {
-                    "text": sample.text.strip(),
-                    "finish_reason": sample.finish_reason,
-                    "n_tokens": len(sample.token_ids),
-                }
-                for sample in output.outputs
-            ],
+            "samples": samples,
+            "retried": idx in set(retry_indices),
             **vote_info,
         })
 
@@ -439,6 +508,11 @@ def run_inference(
         "enable_chunked_prefill": enable_chunked_prefill,
         "enable_prefix_caching": enable_prefix_caching,
         "enable_thinking": enable_thinking,
+        "generation_chunk_size": generation_chunk_size,
+        "retry_bad": retry_bad,
+        "retry_k": retry_k,
+        "retry_max_tokens": retry_max_tokens,
+        "num_retried": len(retry_indices),
         "limit": limit,
         "elapsed_seconds": elapsed,
         "score_summary": score_summary,
@@ -483,6 +557,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--enable-chunked-prefill", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--generation-chunk-size", type=int, default=64)
+    parser.add_argument("--retry-bad", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--retry-k", type=int, default=2)
+    parser.add_argument("--retry-max-tokens", type=int, default=4096)
     parser.add_argument("--raw-output-path", default=None)
     parser.add_argument("--metadata-path", default=None)
     parser.add_argument("--limit", type=int, default=None)
@@ -508,6 +586,10 @@ def main() -> None:
         enable_chunked_prefill=args.enable_chunked_prefill,
         enable_prefix_caching=args.enable_prefix_caching,
         enable_thinking=args.enable_thinking,
+        generation_chunk_size=args.generation_chunk_size,
+        retry_bad=args.retry_bad,
+        retry_k=args.retry_k,
+        retry_max_tokens=args.retry_max_tokens,
         raw_output_path=args.raw_output_path,
         metadata_path=args.metadata_path,
         limit=args.limit,

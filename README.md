@@ -7,7 +7,8 @@ CSE 151B Spring 2026 Kaggle competition.
 
 - Model: `Qwen/Qwen3-4B-Thinking-2507`
 - Backend: vLLM
-- Strategy: pure model inference with thinking mode and self-consistency voting
+- Strategy: pure model inference with thinking mode, self-consistency voting,
+  internal chunked generation, and adaptive retry for low-confidence outputs
 - Test-time tools: none
 - Final entry point: `run_inference.run_inference()`
 
@@ -76,7 +77,11 @@ python run_inference.py \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
-  --no-enable-prefix-caching
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 4096
 ```
 
 Output files:

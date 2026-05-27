@@ -54,12 +54,18 @@ not the final submission path because they execute generated Python with
 2. Build a prompt for each row.
 3. Load `Qwen/Qwen3-4B-Thinking-2507` with vLLM.
 4. Generate `k` independent responses per question.
-5. Extract the final `\boxed{...}` answer from each generated response.
-6. Vote among extracted answers:
+5. Process prompts in internal chunks so the full private set does not need to
+   be scheduled as one large request batch.
+6. Extract the final `\boxed{...}` answer from each generated response.
+7. Retry low-confidence questions, then combine original and retry samples:
+   - no extractable answer
+   - tied vote
+   - truncated generation
+8. Vote among extracted answers:
    - MCQ: vote on the extracted capital letter.
    - Free-form: vote on normalized boxed content.
-7. Select one original full model response whose answer matches the vote.
-8. Write Kaggle CSV with exactly:
+9. Select one original full model response whose answer matches the vote.
+10. Write Kaggle CSV with exactly:
 
 ```text
 id,response
@@ -77,6 +83,10 @@ The default settings in `run_inference.py` are the recommended safe setup for a
 model_id = Qwen/Qwen3-4B-Thinking-2507
 k = 3
 max_tokens = 4096
+generation_chunk_size = 64
+retry_bad = true
+retry_k = 2
+retry_max_tokens = 4096
 temperature = 0.6
 top_p = 0.95
 top_k = 20
@@ -89,6 +99,11 @@ enable_chunked_prefill = true
 enable_prefix_caching = false
 enable_thinking = true
 ```
+
+Chunking does not directly improve single-sample accuracy. It makes the run more
+stable on A30 and lets the pipeline add targeted extra samples for questions
+where the first pass has no boxed answer, a tie, or a length-truncated output.
+That retry step is the accuracy optimization.
 
 The earlier high-throughput settings (`max_model_len=32768`,
 `max_num_batched_tokens=32768`, `gpu_memory_utilization=0.90`) can overfill a
@@ -103,6 +118,7 @@ gpu_memory_utilization = 0.60
 max_num_seqs = 1
 max_num_batched_tokens = 4096
 enable_prefix_caching = false
+retry_bad = false
 ```
 
 ## Why Not Use The Current QLoRA Adapter
@@ -127,6 +143,7 @@ The pipeline writes metadata next to the CSV, including:
 - data path
 - number of questions
 - generation hyperparameters
+- chunk and retry settings
 - elapsed time
 - optional public-set score if run on `data/public.jsonl`
 
