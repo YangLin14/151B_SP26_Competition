@@ -93,6 +93,7 @@ uses these high-context self-consistency settings:
 
 ```text
 model_id = Qwen/Qwen3-4B-Thinking-2507
+vllm = 0.9.1
 k = 5
 max_tokens = 24576
 generation_chunk_size = 32
@@ -115,6 +116,11 @@ enable_thinking = true
 `run_inference.py` uses these same settings as its CLI and Python API defaults
 so the single entry point reproduces the final submission path. For smaller
 debug runs, pass `--limit`, `--start-index`, or `--end-index`.
+
+The environment pins vLLM to `0.9.1` because the older `0.7.x` stack falls back
+to the Transformers backend for `Qwen3ForCausalLM`. The script fails fast on
+old vLLM versions by default so private inference does not accidentally run on
+the slow fallback path.
 
 ## Public Parameter Sweep
 

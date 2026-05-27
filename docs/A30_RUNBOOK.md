@@ -35,28 +35,29 @@ Expected count in this repo:
 
 ## 2. Create Environment
 
-Use Python 3.11 on the A30 Linux machine:
+Use Python 3.11 on the A30 Linux machine. Start from a fresh environment if the
+current env reports `vllm==0.7.x`; that version falls back to the Transformers
+backend for `Qwen3ForCausalLM`.
 
 ```bash
 uv venv .venv --python 3.11 --seed
 source .venv/bin/activate
 ```
 
-Install CUDA PyTorch:
+Install the A30 inference stack:
 
 ```bash
-uv pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
-  --index-url https://download.pytorch.org/whl/cu121
+uv pip install -r requirements-a30.txt --torch-backend=auto
+uv pip check
 ```
 
-Install inference and scoring dependencies:
+Do not preinstall `torch==2.5.1` or force a CUDA 12.1 Torch wheel. Let `uv` and
+the vLLM wheel select the matching PyTorch/CUDA runtime. Mixing an old Torch
+wheel with a newer vLLM wheel is the most common cause of CUDA/custom-kernel
+crashes.
 
-```bash
-uv pip install sympy numpy transformers vllm tqdm bitsandbytes \
-  antlr4-python3-runtime==4.11.1 ipykernel jupyter accelerate \
-  peft trl datasets sentencepiece protobuf scipy pandas scikit-learn \
-  -c constraints.txt
-```
+The pinned stack in this repo requires `vllm==0.9.1`, because Qwen3 native vLLM
+support is not present in the old `0.7.x` stack.
 
 ## 3. Verify GPU And Imports
 
@@ -66,12 +67,15 @@ python - <<'PY'
 import torch
 print("torch:", torch.__version__)
 print("cuda:", torch.cuda.is_available())
+print("torch cuda runtime:", torch.version.cuda)
 print("gpu:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO CUDA")
 PY
 python - <<'PY'
-from vllm import LLM, SamplingParams
-from transformers import AutoTokenizer
-print("vLLM and Transformers import OK")
+import transformers, vllm
+print("vllm:", vllm.__version__)
+print("transformers:", transformers.__version__)
+assert tuple(map(int, vllm.__version__.split(".")[:3])) >= (0, 9, 1), "vLLM is too old for native Qwen3"
+print("vLLM native Qwen3 version check OK")
 PY
 ```
 
@@ -80,6 +84,20 @@ Expected GPU type:
 ```text
 NVIDIA A30
 ```
+
+If the run log contains this line, stop the run and rebuild the environment:
+
+```text
+Qwen3ForCausalLM has no VLLM implementation, falling back to Transformers implementation.
+```
+
+That means the installed vLLM is too old. The current `run_inference.py` also
+fails fast on `vllm<0.9.1` unless `--no-require-native-vllm` is explicitly
+passed for debugging.
+
+Keep prefix caching disabled on A30 for this workload. The prompts are mostly
+unique math questions, so `--enable-prefix-caching` adds memory pressure without
+much reuse. Use the documented `--no-enable-prefix-caching` commands.
 
 ## 4. Optional Public Checkpoint Test
 

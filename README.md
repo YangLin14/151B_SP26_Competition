@@ -39,17 +39,32 @@ export HF_HOME=/path/to/hf_cache
 
 ## Environment Setup
 
+Start from a fresh environment if the machine already has `vllm==0.7.x` or a
+manual `torch==2.5.1` install. vLLM 0.7.x falls back to Transformers for
+`Qwen3ForCausalLM`, which is much slower and uses memory differently.
+
 ```bash
 uv venv .venv --python 3.11 --seed
 source .venv/bin/activate
 
-uv pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
-  --index-url https://download.pytorch.org/whl/cu121
+uv pip install -r requirements-a30.txt --torch-backend=auto
+uv pip check
+```
 
-uv pip install sympy numpy transformers vllm tqdm bitsandbytes \
-  antlr4-python3-runtime==4.11.1 ipykernel jupyter accelerate \
-  peft trl datasets sentencepiece protobuf scipy pandas scikit-learn \
-  -c constraints.txt
+Do not install PyTorch separately before vLLM. The vLLM wheel is compiled
+against a specific PyTorch/CUDA stack, so mixing an old Torch wheel with a newer
+vLLM wheel can trigger CUDA or custom-kernel crashes.
+
+Quick version check:
+
+```bash
+python - <<'PY'
+import torch, vllm, transformers
+print("torch:", torch.__version__, "cuda:", torch.version.cuda)
+print("vllm:", vllm.__version__)
+print("transformers:", transformers.__version__)
+assert tuple(map(int, vllm.__version__.split(".")[:3])) >= (0, 9, 1)
+PY
 ```
 
 ## Run Final Private Inference

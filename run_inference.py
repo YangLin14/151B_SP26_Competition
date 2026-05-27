@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
+import importlib.metadata
 import json
 import math
 import os
@@ -21,6 +23,7 @@ from typing import Any
 
 
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
+MIN_NATIVE_QWEN3_VLLM = (0, 9, 1)
 
 SYSTEM_PROMPT_FREEFORM = (
     "Give one answer per [ANS] in the order they appear, all inside a "
@@ -40,6 +43,37 @@ def configure_environment() -> None:
     os.environ.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
+
+def parse_version_tuple(version: str) -> tuple[int, ...]:
+    numbers: list[int] = []
+    for part in re.split(r"[.+-]", version):
+        if not part.isdigit():
+            break
+        numbers.append(int(part))
+    return tuple(numbers)
+
+
+def validate_runtime_environment(*, require_native_vllm: bool) -> None:
+    try:
+        vllm_version = importlib.metadata.version("vllm")
+    except importlib.metadata.PackageNotFoundError as exc:
+        raise RuntimeError("vLLM is not installed. Recreate the env from requirements-a30.txt.") from exc
+
+    if require_native_vllm and parse_version_tuple(vllm_version) < MIN_NATIVE_QWEN3_VLLM:
+        raise RuntimeError(
+            "Installed vLLM is too old for native Qwen3 inference: "
+            f"found vllm=={vllm_version}, need >=0.9.1. "
+            "vLLM 0.7.x falls back to the Transformers backend for Qwen3ForCausalLM. "
+            "Recreate the environment with: uv pip install -r requirements-a30.txt --torch-backend=auto"
+        )
+
+    try:
+        transformers_version = importlib.metadata.version("transformers")
+    except importlib.metadata.PackageNotFoundError:
+        transformers_version = "unknown"
+
+    print(f"Runtime versions: vllm={vllm_version}, transformers={transformers_version}")
 
 
 def load_jsonl(path: str | Path) -> list[dict[str, Any]]:
@@ -626,6 +660,7 @@ def run_inference(
     retry_bad: bool = True,
     retry_k: int = 2,
     retry_max_tokens: int = 32768,
+    require_native_vllm: bool = True,
     raw_output_path: str | None = None,
     metadata_path: str | None = None,
     limit: int | None = None,
@@ -643,6 +678,8 @@ def run_inference(
     from transformers import AutoTokenizer
     from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
     from vllm import LLM, SamplingParams
+
+    validate_runtime_environment(require_native_vllm=require_native_vllm)
 
     if not hasattr(Qwen2Tokenizer, "all_special_tokens_extended"):
         @property
@@ -694,17 +731,20 @@ def run_inference(
             )
         )
 
-    llm = LLM(
-        model=model_id,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        max_num_seqs=max_num_seqs,
-        max_num_batched_tokens=max_num_batched_tokens,
-        enable_chunked_prefill=enable_chunked_prefill,
-        enable_prefix_caching=enable_prefix_caching,
-    )
+    llm_kwargs = {
+        "model": model_id,
+        "dtype": "bfloat16",
+        "trust_remote_code": True,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_model_len": max_model_len,
+        "max_num_seqs": max_num_seqs,
+        "max_num_batched_tokens": max_num_batched_tokens,
+        "enable_chunked_prefill": enable_chunked_prefill,
+        "enable_prefix_caching": enable_prefix_caching,
+    }
+    if require_native_vllm and "model_impl" in inspect.signature(LLM).parameters:
+        llm_kwargs["model_impl"] = "vllm"
+    llm = LLM(**llm_kwargs)
     sampling_params = SamplingParams(
         n=k,
         max_tokens=max_tokens,
@@ -887,6 +927,7 @@ def run_inference(
         "retry_bad": retry_bad,
         "retry_k": retry_k,
         "retry_max_tokens": retry_max_tokens,
+        "require_native_vllm": require_native_vllm,
         "num_retried": len(retry_indices),
         "limit": limit,
         "start_index": start_index,
@@ -935,6 +976,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retry-bad", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--retry-k", type=int, default=2)
     parser.add_argument("--retry-max-tokens", type=int, default=32768)
+    parser.add_argument("--require-native-vllm", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--raw-output-path", default=None)
     parser.add_argument("--metadata-path", default=None)
     parser.add_argument("--limit", type=int, default=None)
@@ -967,6 +1009,7 @@ def main() -> None:
         retry_bad=args.retry_bad,
         retry_k=args.retry_k,
         retry_max_tokens=args.retry_max_tokens,
+        require_native_vllm=args.require_native_vllm,
         raw_output_path=args.raw_output_path,
         metadata_path=args.metadata_path,
         limit=args.limit,

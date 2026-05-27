@@ -1,0 +1,14 @@
+vllm==0.9.1
+transformers>=4.51.1,<4.54.0
+sympy
+numpy
+tqdm
+antlr4-python3-runtime==4.11.1
+sentencepiece
+protobuf
+pandas
+scipy
+scikit-learn
+ipykernel
+jupyter
+accelerate
