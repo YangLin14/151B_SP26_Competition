@@ -1,0 +1,42 @@
+{
+  "run_name": "qlora_sft_public_smoke",
+  "model_id": "Qwen/Qwen3-4B-Thinking-2507",
+  "data_source": "public",
+  "public_data_path": "data/public.jsonl",
+  "numina_dataset": null,
+  "numina_streaming": null,
+  "numina_shuffle_buffer": null,
+  "num_train_examples": 200,
+  "num_public_dev_examples": 226,
+  "train_ratio": 0.8,
+  "max_seq_len": 2048,
+  "batch_size": 1,
+  "grad_accum": 8,
+  "effective_batch_size": 8,
+  "learning_rate": 0.0002,
+  "num_epochs": 1.0,
+  "max_steps": 50,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "seed": 42,
+  "gpu": "NVIDIA H100 PCIe MIG 1g.20gb",
+  "adapter_dir": "outputs/qlora_sft_public_smoke/final_adapter",
+  "train_runtime_minutes": 4.089651532967886,
+  "train_metrics": {
+    "train_runtime": 245.0625,
+    "train_samples_per_second": 1.632,
+    "train_steps_per_second": 0.204,
+    "total_flos": 2504702891857920.0,
+    "train_loss": 0.8740777206420899
+  }
+}

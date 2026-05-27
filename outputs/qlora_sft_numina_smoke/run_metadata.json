@@ -1,0 +1,42 @@
+{
+  "run_name": "qlora_sft_numina_smoke",
+  "model_id": "Qwen/Qwen3-4B-Thinking-2507",
+  "data_source": "numina",
+  "public_data_path": null,
+  "numina_dataset": "AI-MO/NuminaMath-CoT",
+  "numina_streaming": true,
+  "numina_shuffle_buffer": 10000,
+  "num_train_examples": 500,
+  "num_public_dev_examples": 0,
+  "train_ratio": null,
+  "max_seq_len": 2048,
+  "batch_size": 1,
+  "grad_accum": 8,
+  "effective_batch_size": 8,
+  "learning_rate": 0.0002,
+  "num_epochs": 1.0,
+  "max_steps": 50,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "seed": 42,
+  "gpu": "NVIDIA A30",
+  "adapter_dir": "outputs/qlora_sft_numina_smoke/final_adapter",
+  "train_runtime_minutes": 4.161060730616252,
+  "train_metrics": {
+    "train_runtime": 249.3887,
+    "train_samples_per_second": 1.604,
+    "train_steps_per_second": 0.2,
+    "total_flos": 5059410084602880.0,
+    "train_loss": 0.602979326248169
+  }
+}
