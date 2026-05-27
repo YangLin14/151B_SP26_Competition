@@ -929,7 +929,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-num-seqs", type=int, default=8)
     parser.add_argument("--max-num-batched-tokens", type=int, default=16384)
     parser.add_argument("--enable-chunked-prefill", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--generation-chunk-size", type=int, default=32)
     parser.add_argument("--retry-bad", action=argparse.BooleanOptionalAction, default=True)
