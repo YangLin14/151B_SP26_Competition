@@ -81,45 +81,48 @@ Expected GPU type:
 NVIDIA A30
 ```
 
-## 4. Optional Public Smoke Test
+## 4. Optional Public Checkpoint Test
 
-Run 10 public examples first. This checks model loading, generation, CSV
-writing, raw JSONL writing, and public scoring.
+Run the first 50 public examples first. This checks model loading, high-context
+generation, CSV writing, raw JSONL checkpoint writing, and public scoring.
 
 ```bash
 python run_inference.py \
   --data-path data/public.jsonl \
-  --output-path results/public_smoke_submission.csv \
-  --limit 10 \
-  --k 3 \
-  --max-tokens 4096 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.72 \
-  --max-num-seqs 4 \
-  --max-num-batched-tokens 8192 \
+  --output-path results/public_chunk_000_050.csv \
+  --raw-output-path results/public_chunk_000_050.raw.jsonl \
+  --metadata-path results/public_chunk_000_050.metadata.json \
+  --start-index 0 \
+  --end-index 50 \
+  --k 5 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 64 \
+  --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
-  --retry-max-tokens 4096
+  --retry-max-tokens 32768
 ```
 
 Inspect outputs:
 
 ```bash
-ls -lh results/public_smoke_submission.csv \
-       results/public_smoke_submission.raw.jsonl \
-       results/public_smoke_submission.metadata.json
+ls -lh results/public_chunk_000_050.csv \
+       results/public_chunk_000_050.raw.jsonl \
+       results/public_chunk_000_050.metadata.json
 
 python - <<'PY'
 import csv, json
 from pathlib import Path
-csv_path = Path("results/public_smoke_submission.csv")
+csv_path = Path("results/public_chunk_000_050.csv")
 rows = list(csv.DictReader(csv_path.open(newline="", encoding="utf-8")))
 print("rows:", len(rows))
 print("first id:", rows[0]["id"])
 print("has boxed:", "\\boxed{" in rows[0]["response"])
-print(json.loads(Path("results/public_smoke_submission.metadata.json").read_text())["score_summary"])
+print(json.loads(Path("results/public_chunk_000_050.metadata.json").read_text())["score_summary"])
 PY
 ```
 
@@ -131,17 +134,17 @@ This is optional but recommended before private submission if time allows:
 python run_inference.py \
   --data-path data/public.jsonl \
   --output-path results/public_full_submission.csv \
-  --k 3 \
-  --max-tokens 4096 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.72 \
-  --max-num-seqs 4 \
-  --max-num-batched-tokens 8192 \
+  --k 5 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 64 \
+  --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
-  --retry-max-tokens 4096
+  --retry-max-tokens 32768
 ```
 
 Read the public score:
@@ -193,10 +196,10 @@ python sweep_inference_configs.py \
 The sweep runs:
 
 ```text
-A. k=3, max_tokens=4096
-B. k=5, max_tokens=4096
-C. k=7, max_tokens=4096, generation_chunk_size=16
-D. k=5, max_tokens=6144
+A. k=3, max_tokens=24576
+B. k=5, max_tokens=24576
+C. k=7, max_tokens=24576, generation_chunk_size=16
+D. k=5, max_tokens=32768
 E. k=5, retry_k=4
 ```
 
@@ -278,16 +281,16 @@ python run_inference.py \
   --data-path data/private.jsonl \
   --output-path results/submission_final.csv \
   --k 5 \
-  --max-tokens 4096 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.72 \
-  --max-num-seqs 4 \
-  --max-num-batched-tokens 8192 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
   --no-enable-prefix-caching \
   --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
-  --retry-max-tokens 4096
+  --retry-max-tokens 32768
 ```
 
 This is still one reproducible `run_inference()` pipeline. The chunking is
@@ -367,29 +370,29 @@ python run_inference.py \
   --start-index START \
   --end-index END \
   --k 5 \
-  --max-tokens 4096 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.72 \
-  --max-num-seqs 4 \
-  --max-num-batched-tokens 8192 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
   --no-enable-prefix-caching \
   --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
-  --retry-max-tokens 4096
+  --retry-max-tokens 32768
 ```
 
 Concrete commands:
 
 ```bash
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_000_118.csv --raw-output-path results/submission_part_000_118.raw.jsonl --metadata-path results/submission_part_000_118.metadata.json --start-index 0 --end-index 118 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_118_236.csv --raw-output-path results/submission_part_118_236.raw.jsonl --metadata-path results/submission_part_118_236.metadata.json --start-index 118 --end-index 236 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_236_354.csv --raw-output-path results/submission_part_236_354.raw.jsonl --metadata-path results/submission_part_236_354.metadata.json --start-index 236 --end-index 354 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_354_472.csv --raw-output-path results/submission_part_354_472.raw.jsonl --metadata-path results/submission_part_354_472.metadata.json --start-index 354 --end-index 472 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_472_590.csv --raw-output-path results/submission_part_472_590.raw.jsonl --metadata-path results/submission_part_472_590.metadata.json --start-index 472 --end-index 590 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_590_708.csv --raw-output-path results/submission_part_590_708.raw.jsonl --metadata-path results/submission_part_590_708.metadata.json --start-index 590 --end-index 708 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_708_826.csv --raw-output-path results/submission_part_708_826.raw.jsonl --metadata-path results/submission_part_708_826.metadata.json --start-index 708 --end-index 826 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
-python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_826_943.csv --raw-output-path results/submission_part_826_943.raw.jsonl --metadata-path results/submission_part_826_943.metadata.json --start-index 826 --end-index 943 --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_000_118.csv --raw-output-path results/submission_part_000_118.raw.jsonl --metadata-path results/submission_part_000_118.metadata.json --start-index 0 --end-index 118 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_118_236.csv --raw-output-path results/submission_part_118_236.raw.jsonl --metadata-path results/submission_part_118_236.metadata.json --start-index 118 --end-index 236 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_236_354.csv --raw-output-path results/submission_part_236_354.raw.jsonl --metadata-path results/submission_part_236_354.metadata.json --start-index 236 --end-index 354 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_354_472.csv --raw-output-path results/submission_part_354_472.raw.jsonl --metadata-path results/submission_part_354_472.metadata.json --start-index 354 --end-index 472 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_472_590.csv --raw-output-path results/submission_part_472_590.raw.jsonl --metadata-path results/submission_part_472_590.metadata.json --start-index 472 --end-index 590 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_590_708.csv --raw-output-path results/submission_part_590_708.raw.jsonl --metadata-path results/submission_part_590_708.metadata.json --start-index 590 --end-index 708 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_708_826.csv --raw-output-path results/submission_part_708_826.raw.jsonl --metadata-path results/submission_part_708_826.metadata.json --start-index 708 --end-index 826 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
+python run_inference.py --data-path data/private.jsonl --output-path results/submission_part_826_943.csv --raw-output-path results/submission_part_826_943.raw.jsonl --metadata-path results/submission_part_826_943.metadata.json --start-index 826 --end-index 943 --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
 ```
 
 After all shards finish, merge them:
@@ -435,8 +438,8 @@ PY
 
 `responses without boxed` should ideally be near zero. It is reported but does
 not abort because the evaluator may still extract answers from explicit prose in
-some cases. If it is high and memory allows it, rerun with larger `--max-tokens`,
-such as `6144`.
+some cases. If it is high and memory allows it, rerun a small shard with larger
+`--max-tokens`, such as `32768`, before committing to the full private run.
 
 ## 8. Gradescope / README Details
 
@@ -446,7 +449,7 @@ Record these values in the final README:
 GPU type: NVIDIA A30
 Model: Qwen/Qwen3-4B-Thinking-2507
 Inference backend: vLLM
-Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
+Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
 Approx total generation time: copy from results/submission_final.metadata.json elapsed_seconds
 Model weights: downloaded from HuggingFace Hub automatically by Transformers/vLLM cache
 Single entry point: run_inference.run_inference()

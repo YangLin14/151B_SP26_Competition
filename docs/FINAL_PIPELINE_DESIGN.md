@@ -89,32 +89,32 @@ to complete the private set.
 ## Final A30 Command
 
 The final private run that has been confirmed to start successfully on the A30
-uses a stronger self-consistency setting than the conservative CLI defaults:
+uses these high-context self-consistency settings:
 
 ```text
 model_id = Qwen/Qwen3-4B-Thinking-2507
 k = 5
-max_tokens = 4096
+max_tokens = 24576
 generation_chunk_size = 32
 retry_bad = true
 retry_k = 2
-retry_max_tokens = 4096
+retry_max_tokens = 32768
 temperature = 0.6
 top_p = 0.95
 top_k = 20
 repetition_penalty = 1.0
-max_model_len = 8192
-gpu_memory_utilization = 0.72
-max_num_seqs = 4
-max_num_batched_tokens = 8192
+max_model_len = 32768
+gpu_memory_utilization = 0.90
+max_num_seqs = 8
+max_num_batched_tokens = 16384
 enable_chunked_prefill = true
 enable_prefix_caching = false
 enable_thinking = true
 ```
 
-`run_inference.py` keeps slightly safer CLI defaults (`k=3`,
-`generation_chunk_size=64`) so smoke tests are less likely to fail. For the final
-private submission, use the documented A30 command in `docs/A30_RUNBOOK.md`.
+`run_inference.py` uses these same settings as its CLI and Python API defaults
+so the single entry point reproduces the final submission path. For smaller
+debug runs, pass `--limit`, `--start-index`, or `--end-index`.
 
 ## Public Parameter Sweep
 
@@ -122,10 +122,10 @@ private submission, use the documented A30 command in `docs/A30_RUNBOOK.md`.
 settings:
 
 ```text
-A. k=3, max_tokens=4096
-B. k=5, max_tokens=4096
-C. k=7, max_tokens=4096, generation_chunk_size=16
-D. k=5, max_tokens=6144
+A. k=3, max_tokens=24576
+B. k=5, max_tokens=24576
+C. k=7, max_tokens=24576, generation_chunk_size=16
+D. k=5, max_tokens=32768
 E. k=5, retry_k=4
 ```
 
@@ -153,10 +153,12 @@ stable on A30 and lets the pipeline add targeted extra samples for questions
 where the first pass has no boxed answer, a tie, or a length-truncated output.
 That retry step is the accuracy optimization.
 
-The earlier high-throughput settings (`max_model_len=32768`,
-`max_num_batched_tokens=32768`, `gpu_memory_utilization=0.90`) can overfill a
-24GB A30 because vLLM allocates a large KV cache up front. If the safe setup
-still hits out-of-memory, use the emergency settings:
+The confirmed A30 high-context settings use `max_model_len=32768`,
+`max_num_batched_tokens=16384`, and `gpu_memory_utilization=0.90`. Avoid
+raising `max_num_batched_tokens` to `32768` on A30 unless you have already
+validated it in a short public shard, because vLLM allocates a large KV cache up
+front. If the confirmed setup still hits out-of-memory, use the emergency
+settings:
 
 ```text
 k = 1

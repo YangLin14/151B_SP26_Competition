@@ -14,50 +14,50 @@ from typing import Any
 
 
 BASE_CONFIG: dict[str, Any] = {
-    "max_model_len": 8192,
-    "gpu_memory_utilization": 0.72,
-    "max_num_seqs": 4,
-    "max_num_batched_tokens": 8192,
+    "max_model_len": 32768,
+    "gpu_memory_utilization": 0.90,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 16384,
     "enable_prefix_caching": False,
     "enable_chunked_prefill": True,
     "retry_bad": True,
     "retry_k": 2,
-    "retry_max_tokens": 4096,
+    "retry_max_tokens": 32768,
     "generation_chunk_size": 32,
 }
 
 SWEEP_CONFIGS: list[dict[str, Any]] = [
     {
-        "name": "A_k3_tok4096",
-        "description": "k=3, max_tokens=4096",
+        "name": "A_k3_tok24576",
+        "description": "k=3, max_tokens=24576",
         "k": 3,
-        "max_tokens": 4096,
+        "max_tokens": 24576,
     },
     {
-        "name": "B_k5_tok4096",
-        "description": "k=5, max_tokens=4096",
+        "name": "B_k5_tok24576",
+        "description": "k=5, max_tokens=24576",
         "k": 5,
-        "max_tokens": 4096,
+        "max_tokens": 24576,
     },
     {
-        "name": "C_k7_tok4096_chunk16",
-        "description": "k=7, max_tokens=4096, generation_chunk_size=16",
+        "name": "C_k7_tok24576_chunk16",
+        "description": "k=7, max_tokens=24576, generation_chunk_size=16",
         "k": 7,
-        "max_tokens": 4096,
+        "max_tokens": 24576,
         "generation_chunk_size": 16,
     },
     {
-        "name": "D_k5_tok6144",
-        "description": "k=5, max_tokens=6144",
+        "name": "D_k5_tok32768",
+        "description": "k=5, max_tokens=32768",
         "k": 5,
-        "max_tokens": 6144,
-        "retry_max_tokens": 6144,
+        "max_tokens": 32768,
+        "retry_max_tokens": 32768,
     },
     {
         "name": "E_k5_retry4",
         "description": "k=5, retry_k=4",
         "k": 5,
-        "max_tokens": 4096,
+        "max_tokens": 24576,
         "retry_k": 4,
     },
 ]
@@ -184,10 +184,10 @@ def write_summary(output_dir: Path, rows: list[dict[str, Any]]) -> None:
             "--output-path results/submission_final.csv "
             f"--k {best['k']} "
             f"--max-tokens {best['max_tokens']} "
-            "--max-model-len 8192 "
-            "--gpu-memory-utilization 0.72 "
-            "--max-num-seqs 4 "
-            "--max-num-batched-tokens 8192 "
+            "--max-model-len 32768 "
+            "--gpu-memory-utilization 0.90 "
+            "--max-num-seqs 8 "
+            "--max-num-batched-tokens 16384 "
             "--no-enable-prefix-caching "
             f"--generation-chunk-size {best['generation_chunk_size']} "
             "--retry-bad "

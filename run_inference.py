@@ -510,23 +510,23 @@ def run_inference(
     output_path: str = "results/submission_final.csv",
     model_id: str = MODEL_ID,
     *,
-    k: int = 3,
-    max_tokens: int = 4096,
+    k: int = 5,
+    max_tokens: int = 24576,
     temperature: float = 0.6,
     top_p: float = 0.95,
     top_k: int = 20,
     repetition_penalty: float = 1.0,
-    max_model_len: int = 8192,
-    gpu_memory_utilization: float = 0.72,
-    max_num_seqs: int = 4,
-    max_num_batched_tokens: int = 8192,
+    max_model_len: int = 32768,
+    gpu_memory_utilization: float = 0.90,
+    max_num_seqs: int = 8,
+    max_num_batched_tokens: int = 16384,
     enable_chunked_prefill: bool = True,
     enable_prefix_caching: bool = False,
     enable_thinking: bool = True,
-    generation_chunk_size: int = 64,
+    generation_chunk_size: int = 32,
     retry_bad: bool = True,
     retry_k: int = 2,
-    retry_max_tokens: int = 4096,
+    retry_max_tokens: int = 32768,
     raw_output_path: str | None = None,
     metadata_path: str | None = None,
     limit: int | None = None,
@@ -812,23 +812,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-path", default="data/private.jsonl")
     parser.add_argument("--output-path", default="results/submission_final.csv")
     parser.add_argument("--model-id", default=MODEL_ID)
-    parser.add_argument("--k", type=int, default=3)
-    parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument("--k", type=int, default=5)
+    parser.add_argument("--max-tokens", type=int, default=24576)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
-    parser.add_argument("--max-model-len", type=int, default=8192)
-    parser.add_argument("--gpu-memory-utilization", type=float, default=0.72)
-    parser.add_argument("--max-num-seqs", type=int, default=4)
-    parser.add_argument("--max-num-batched-tokens", type=int, default=8192)
+    parser.add_argument("--max-model-len", type=int, default=32768)
+    parser.add_argument("--gpu-memory-utilization", type=float, default=0.90)
+    parser.add_argument("--max-num-seqs", type=int, default=8)
+    parser.add_argument("--max-num-batched-tokens", type=int, default=16384)
     parser.add_argument("--enable-chunked-prefill", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--generation-chunk-size", type=int, default=64)
+    parser.add_argument("--generation-chunk-size", type=int, default=32)
     parser.add_argument("--retry-bad", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--retry-k", type=int, default=2)
-    parser.add_argument("--retry-max-tokens", type=int, default=4096)
+    parser.add_argument("--retry-max-tokens", type=int, default=32768)
     parser.add_argument("--raw-output-path", default=None)
     parser.add_argument("--metadata-path", default=None)
     parser.add_argument("--limit", type=int, default=None)
