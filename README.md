@@ -70,11 +70,13 @@ Command line:
 python run_inference.py \
   --data-path data/private.jsonl \
   --output-path results/submission_final.csv \
-  --k 5 \
-  --max-tokens 8192 \
-  --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 32768
+  --k 3 \
+  --max-tokens 4096 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.72 \
+  --max-num-seqs 4 \
+  --max-num-batched-tokens 8192 \
+  --no-enable-prefix-caching
 ```
 
 Output files:

@@ -297,17 +297,18 @@ def run_inference(
     output_path: str = "results/submission_final.csv",
     model_id: str = MODEL_ID,
     *,
-    k: int = 5,
-    max_tokens: int = 8192,
+    k: int = 3,
+    max_tokens: int = 4096,
     temperature: float = 0.6,
     top_p: float = 0.95,
     top_k: int = 20,
     repetition_penalty: float = 1.0,
-    max_model_len: int = 32768,
-    gpu_memory_utilization: float = 0.90,
-    max_num_seqs: int = 8,
-    max_num_batched_tokens: int = 32768,
+    max_model_len: int = 8192,
+    gpu_memory_utilization: float = 0.72,
+    max_num_seqs: int = 4,
+    max_num_batched_tokens: int = 8192,
     enable_chunked_prefill: bool = True,
+    enable_prefix_caching: bool = False,
     enable_thinking: bool = True,
     raw_output_path: str | None = None,
     metadata_path: str | None = None,
@@ -315,8 +316,8 @@ def run_inference(
 ) -> str:
     """Run the full end-to-end pipeline and write a Kaggle submission CSV.
 
-    Defaults are tuned for one NVIDIA A30. `limit` is only for local smoke tests;
-    leave it as None for the final private run.
+    Defaults are tuned to fit one 24GB NVIDIA A30. `limit` is only for local
+    smoke tests; leave it as None for the final private run.
     """
     configure_environment()
 
@@ -368,7 +369,7 @@ def run_inference(
         max_num_seqs=max_num_seqs,
         max_num_batched_tokens=max_num_batched_tokens,
         enable_chunked_prefill=enable_chunked_prefill,
-        enable_prefix_caching=True,
+        enable_prefix_caching=enable_prefix_caching,
     )
     sampling_params = SamplingParams(
         n=k,
@@ -436,6 +437,7 @@ def run_inference(
         "max_num_seqs": max_num_seqs,
         "max_num_batched_tokens": max_num_batched_tokens,
         "enable_chunked_prefill": enable_chunked_prefill,
+        "enable_prefix_caching": enable_prefix_caching,
         "enable_thinking": enable_thinking,
         "limit": limit,
         "elapsed_seconds": elapsed,
@@ -468,17 +470,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-path", default="data/private.jsonl")
     parser.add_argument("--output-path", default="results/submission_final.csv")
     parser.add_argument("--model-id", default=MODEL_ID)
-    parser.add_argument("--k", type=int, default=5)
-    parser.add_argument("--max-tokens", type=int, default=8192)
+    parser.add_argument("--k", type=int, default=3)
+    parser.add_argument("--max-tokens", type=int, default=4096)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
-    parser.add_argument("--max-model-len", type=int, default=32768)
-    parser.add_argument("--gpu-memory-utilization", type=float, default=0.90)
-    parser.add_argument("--max-num-seqs", type=int, default=8)
-    parser.add_argument("--max-num-batched-tokens", type=int, default=32768)
+    parser.add_argument("--max-model-len", type=int, default=8192)
+    parser.add_argument("--gpu-memory-utilization", type=float, default=0.72)
+    parser.add_argument("--max-num-seqs", type=int, default=4)
+    parser.add_argument("--max-num-batched-tokens", type=int, default=8192)
     parser.add_argument("--enable-chunked-prefill", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--raw-output-path", default=None)
     parser.add_argument("--metadata-path", default=None)
@@ -503,6 +506,7 @@ def main() -> None:
         max_num_seqs=args.max_num_seqs,
         max_num_batched_tokens=args.max_num_batched_tokens,
         enable_chunked_prefill=args.enable_chunked_prefill,
+        enable_prefix_caching=args.enable_prefix_caching,
         enable_thinking=args.enable_thinking,
         raw_output_path=args.raw_output_path,
         metadata_path=args.metadata_path,

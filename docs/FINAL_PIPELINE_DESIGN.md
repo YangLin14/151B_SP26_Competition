@@ -70,32 +70,39 @@ answer-only string.
 
 ## Final A30 Defaults
 
-The default settings in `run_inference.py` are the recommended final A30 setup:
+The default settings in `run_inference.py` are the recommended safe setup for a
+24GB A30:
 
 ```text
 model_id = Qwen/Qwen3-4B-Thinking-2507
-k = 5
-max_tokens = 8192
+k = 3
+max_tokens = 4096
 temperature = 0.6
 top_p = 0.95
 top_k = 20
 repetition_penalty = 1.0
-max_model_len = 32768
-gpu_memory_utilization = 0.90
-max_num_seqs = 8
-max_num_batched_tokens = 32768
+max_model_len = 8192
+gpu_memory_utilization = 0.72
+max_num_seqs = 4
+max_num_batched_tokens = 8192
 enable_chunked_prefill = true
+enable_prefix_caching = false
 enable_thinking = true
 ```
 
-If the A30 run hits out-of-memory, use the fallback settings:
+The earlier high-throughput settings (`max_model_len=32768`,
+`max_num_batched_tokens=32768`, `gpu_memory_utilization=0.90`) can overfill a
+24GB A30 because vLLM allocates a large KV cache up front. If the safe setup
+still hits out-of-memory, use the emergency settings:
 
 ```text
-k = 3
-max_tokens = 8192
-gpu_memory_utilization = 0.85
-max_num_seqs = 4
-max_num_batched_tokens = 16384
+k = 1
+max_tokens = 4096
+max_model_len = 8192
+gpu_memory_utilization = 0.60
+max_num_seqs = 1
+max_num_batched_tokens = 4096
+enable_prefix_caching = false
 ```
 
 ## Why Not Use The Current QLoRA Adapter

@@ -93,9 +93,11 @@ python run_inference.py \
   --limit 10 \
   --k 3 \
   --max-tokens 4096 \
-  --gpu-memory-utilization 0.85 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
-  --max-num-batched-tokens 16384
+  --max-num-batched-tokens 8192 \
+  --no-enable-prefix-caching
 ```
 
 Inspect outputs:
@@ -125,11 +127,13 @@ This is optional but recommended before private submission if time allows:
 python run_inference.py \
   --data-path data/public.jsonl \
   --output-path results/public_full_submission.csv \
-  --k 5 \
-  --max-tokens 8192 \
-  --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 32768
+  --k 3 \
+  --max-tokens 4096 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.72 \
+  --max-num-seqs 4 \
+  --max-num-batched-tokens 8192 \
+  --no-enable-prefix-caching
 ```
 
 Read the public score:
@@ -146,30 +150,55 @@ PY
 
 ## 6. Final Private Run
 
-Run the full private set with the final A30 defaults:
+Before a private run, make sure no stale process is still holding GPU memory:
 
 ```bash
-python run_inference.py \
-  --data-path data/private.jsonl \
-  --output-path results/submission_final.csv \
-  --k 5 \
-  --max-tokens 8192 \
-  --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 32768
+nvidia-smi
 ```
 
-If the A30 runs out of memory, use the conservative fallback:
+If `nvidia-smi` shows a leftover Python process from a failed run that belongs
+to you, terminate it:
+
+```bash
+kill -TERM <PID>
+sleep 5
+nvidia-smi
+```
+
+If it is still present after `TERM`, use:
+
+```bash
+kill -9 <PID>
+```
+
+Run the full private set with the final safe A30 defaults:
 
 ```bash
 python run_inference.py \
   --data-path data/private.jsonl \
   --output-path results/submission_final.csv \
   --k 3 \
-  --max-tokens 8192 \
-  --gpu-memory-utilization 0.85 \
+  --max-tokens 4096 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
-  --max-num-batched-tokens 16384
+  --max-num-batched-tokens 8192 \
+  --no-enable-prefix-caching
+```
+
+If the A30 still runs out of memory, use the emergency single-sample fallback:
+
+```bash
+python run_inference.py \
+  --data-path data/private.jsonl \
+  --output-path results/submission_final.csv \
+  --k 1 \
+  --max-tokens 4096 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.60 \
+  --max-num-seqs 1 \
+  --max-num-batched-tokens 4096 \
+  --no-enable-prefix-caching
 ```
 
 ## 7. Validate Final CSV
@@ -206,7 +235,8 @@ PY
 
 `responses without boxed` should ideally be near zero. It is reported but does
 not abort because the evaluator may still extract answers from explicit prose in
-some cases. If it is high, rerun with larger `--max-tokens`, such as `16384`.
+some cases. If it is high and memory allows it, rerun with larger `--max-tokens`,
+such as `6144`.
 
 ## 8. Gradescope / README Details
 
@@ -216,9 +246,8 @@ Record these values in the final README:
 GPU type: NVIDIA A30
 Model: Qwen/Qwen3-4B-Thinking-2507
 Inference backend: vLLM
-Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 8192 ...
+Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 3 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching
 Approx total generation time: copy from results/submission_final.metadata.json elapsed_seconds
 Model weights: downloaded from HuggingFace Hub automatically by Transformers/vLLM cache
 Single entry point: run_inference.run_inference()
 ```
-
