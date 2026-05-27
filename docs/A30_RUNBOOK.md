@@ -202,20 +202,21 @@ If it is still present after `TERM`, use:
 kill -9 <PID>
 ```
 
-Run the full private set with the final safe A30 defaults:
+Run the full private set with the final A30 command. This exact setting has been
+confirmed to start successfully on the A30:
 
 ```bash
 python run_inference.py \
   --data-path data/private.jsonl \
   --output-path results/submission_final.csv \
-  --k 3 \
+  --k 5 \
   --max-tokens 4096 \
   --max-model-len 8192 \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 64 \
+  --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
   --retry-max-tokens 4096
@@ -287,7 +288,7 @@ Record these values in the final README:
 GPU type: NVIDIA A30
 Model: Qwen/Qwen3-4B-Thinking-2507
 Inference backend: vLLM
-Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 3 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 64 --retry-bad --retry-k 2 --retry-max-tokens 4096
+Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 4096 --max-model-len 8192 --gpu-memory-utilization 0.72 --max-num-seqs 4 --max-num-batched-tokens 8192 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 4096
 Approx total generation time: copy from results/submission_final.metadata.json elapsed_seconds
 Model weights: downloaded from HuggingFace Hub automatically by Transformers/vLLM cache
 Single entry point: run_inference.run_inference()

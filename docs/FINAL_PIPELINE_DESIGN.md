@@ -74,16 +74,16 @@ id,response
 The submitted `response` field is a full model output trace, not a synthetic
 answer-only string.
 
-## Final A30 Defaults
+## Final A30 Command
 
-The default settings in `run_inference.py` are the recommended safe setup for a
-24GB A30:
+The final private run that has been confirmed to start successfully on the A30
+uses a stronger self-consistency setting than the conservative CLI defaults:
 
 ```text
 model_id = Qwen/Qwen3-4B-Thinking-2507
-k = 3
+k = 5
 max_tokens = 4096
-generation_chunk_size = 64
+generation_chunk_size = 32
 retry_bad = true
 retry_k = 2
 retry_max_tokens = 4096
@@ -99,6 +99,10 @@ enable_chunked_prefill = true
 enable_prefix_caching = false
 enable_thinking = true
 ```
+
+`run_inference.py` keeps slightly safer CLI defaults (`k=3`,
+`generation_chunk_size=64`) so smoke tests are less likely to fail. For the final
+private submission, use the documented A30 command in `docs/A30_RUNBOOK.md`.
 
 Chunking does not directly improve single-sample accuracy. It makes the run more
 stable on A30 and lets the pipeline add targeted extra samples for questions

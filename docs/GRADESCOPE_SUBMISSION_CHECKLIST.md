@@ -60,14 +60,14 @@ Run:
 python run_inference.py \
   --data-path data/private.jsonl \
   --output-path results/submission_final.csv \
-  --k 3 \
+  --k 5 \
   --max-tokens 4096 \
   --max-model-len 8192 \
   --gpu-memory-utilization 0.72 \
   --max-num-seqs 4 \
   --max-num-batched-tokens 8192 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 64 \
+  --generation-chunk-size 32 \
   --retry-bad \
   --retry-k 2 \
   --retry-max-tokens 4096
