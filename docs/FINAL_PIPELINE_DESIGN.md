@@ -129,6 +129,13 @@ The best config is selected primarily by public overall accuracy, with
 boxed-answer coverage, truncation rate, and retry rate used as secondary
 diagnostics.
 
+The sweep runs each candidate in a separate Python subprocess rather than
+calling all candidates inside one long-lived process. This matters on A30:
+vLLM/CUDA memory is released when each subprocess exits, so a heavy candidate is
+less likely to poison the next run. Failed candidates are recorded in the summary
+with `status=failed` and do not block the rest of the sweep unless
+`--no-continue-on-failure` is used.
+
 Chunking does not directly improve single-sample accuracy. It makes the run more
 stable on A30 and lets the pipeline add targeted extra samples for questions
 where the first pass has no boxed answer, a tie, or a length-truncated output.

@@ -213,6 +213,12 @@ results/sweeps/public_inference/*.raw.jsonl
 The script prints the best config and a private-run command shape using the
 winning parameters.
 
+Each sweep candidate runs in its own Python subprocess. This is intentional:
+when one vLLM run exits, CUDA memory and NCCL state are released by the process
+exit before the next candidate starts. If a candidate OOMs or exits non-zero,
+the sweep records it as `status=failed` in that candidate's metadata and keeps
+running the remaining candidates by default.
+
 For a faster smoke sweep before the full public run:
 
 ```bash
@@ -230,6 +236,15 @@ python sweep_inference_configs.py \
   --data-path data/public.jsonl \
   --output-dir results/sweeps/public_inference \
   --no-skip-existing
+```
+
+To stop immediately on the first failed candidate:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_inference \
+  --no-continue-on-failure
 ```
 
 ## 6. Final Private Run

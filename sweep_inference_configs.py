@@ -6,11 +6,11 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
-
-from run_inference import run_inference
 
 
 BASE_CONFIG: dict[str, Any] = {
@@ -70,6 +70,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--only", default=None, help="Comma-separated config names to run.")
     parser.add_argument("--skip-existing", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--continue-on-failure", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--model-id", default="Qwen/Qwen3-4B-Thinking-2507")
     return parser.parse_args()
 
@@ -100,6 +101,8 @@ def flatten_result(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str
     return {
         "name": config["name"],
         "description": config["description"],
+        "status": metadata.get("status", "ok"),
+        "error": metadata.get("error", ""),
         "overall_correct": overall.get("correct"),
         "overall_total": overall.get("total"),
         "overall_accuracy_pct": pct(overall.get("accuracy")),
@@ -149,7 +152,8 @@ def write_summary(output_dir: Path, rows: list[dict[str, Any]]) -> None:
     json_path = output_dir / "summary.json"
     csv_path = output_dir / "summary.csv"
 
-    best = max(rows, key=score_sort_key) if rows else None
+    successful_rows = [row for row in rows if row.get("status") == "ok"]
+    best = max(successful_rows, key=score_sort_key) if successful_rows else None
     json_path.write_text(
         json.dumps({"best": best, "runs": rows}, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
@@ -190,6 +194,97 @@ def write_summary(output_dir: Path, rows: list[dict[str, Any]]) -> None:
             f"--retry-k {best['retry_k']} "
             f"--retry-max-tokens {best['retry_max_tokens']}"
         )
+    else:
+        print("\nNo successful sweep runs yet.")
+
+
+def build_run_command(
+    *,
+    args: argparse.Namespace,
+    run_config: dict[str, Any],
+    output_path: Path,
+    raw_path: Path,
+    metadata_path: Path,
+) -> list[str]:
+    cmd = [
+        sys.executable,
+        "run_inference.py",
+        "--data-path",
+        args.data_path,
+        "--output-path",
+        str(output_path),
+        "--model-id",
+        args.model_id,
+        "--k",
+        str(run_config["k"]),
+        "--max-tokens",
+        str(run_config["max_tokens"]),
+        "--max-model-len",
+        str(run_config["max_model_len"]),
+        "--gpu-memory-utilization",
+        str(run_config["gpu_memory_utilization"]),
+        "--max-num-seqs",
+        str(run_config["max_num_seqs"]),
+        "--max-num-batched-tokens",
+        str(run_config["max_num_batched_tokens"]),
+        "--generation-chunk-size",
+        str(run_config["generation_chunk_size"]),
+        "--retry-k",
+        str(run_config["retry_k"]),
+        "--retry-max-tokens",
+        str(run_config["retry_max_tokens"]),
+        "--raw-output-path",
+        str(raw_path),
+        "--metadata-path",
+        str(metadata_path),
+    ]
+    cmd.append("--enable-chunked-prefill" if run_config["enable_chunked_prefill"] else "--no-enable-chunked-prefill")
+    cmd.append("--enable-prefix-caching" if run_config["enable_prefix_caching"] else "--no-enable-prefix-caching")
+    cmd.append("--retry-bad" if run_config["retry_bad"] else "--no-retry-bad")
+    if args.limit is not None:
+        cmd.extend(["--limit", str(args.limit)])
+    return cmd
+
+
+def write_failed_metadata(
+    metadata_path: Path,
+    *,
+    args: argparse.Namespace,
+    run_config: dict[str, Any],
+    output_path: Path,
+    raw_path: Path,
+    returncode: int,
+    elapsed_seconds: float,
+) -> None:
+    metadata = {
+        "status": "failed",
+        "error": f"run_inference.py exited with return code {returncode}",
+        "returncode": returncode,
+        "model_id": args.model_id,
+        "data_path": args.data_path,
+        "output_path": str(output_path),
+        "raw_output_path": str(raw_path),
+        "k": run_config["k"],
+        "max_tokens": run_config["max_tokens"],
+        "max_model_len": run_config["max_model_len"],
+        "gpu_memory_utilization": run_config["gpu_memory_utilization"],
+        "max_num_seqs": run_config["max_num_seqs"],
+        "max_num_batched_tokens": run_config["max_num_batched_tokens"],
+        "enable_chunked_prefill": run_config["enable_chunked_prefill"],
+        "enable_prefix_caching": run_config["enable_prefix_caching"],
+        "generation_chunk_size": run_config["generation_chunk_size"],
+        "retry_bad": run_config["retry_bad"],
+        "retry_k": run_config["retry_k"],
+        "retry_max_tokens": run_config["retry_max_tokens"],
+        "limit": args.limit,
+        "elapsed_seconds": elapsed_seconds,
+        "score_summary": None,
+        "generation_summary": {},
+    }
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def main() -> None:
@@ -220,27 +315,32 @@ def main() -> None:
             print(f"Skipping existing run: {metadata_path}")
         else:
             started = time.time()
-            run_inference(
-                data_path=args.data_path,
-                output_path=str(output_path),
-                model_id=args.model_id,
-                k=int(run_config["k"]),
-                max_tokens=int(run_config["max_tokens"]),
-                max_model_len=int(run_config["max_model_len"]),
-                gpu_memory_utilization=float(run_config["gpu_memory_utilization"]),
-                max_num_seqs=int(run_config["max_num_seqs"]),
-                max_num_batched_tokens=int(run_config["max_num_batched_tokens"]),
-                enable_prefix_caching=bool(run_config["enable_prefix_caching"]),
-                enable_chunked_prefill=bool(run_config["enable_chunked_prefill"]),
-                generation_chunk_size=int(run_config["generation_chunk_size"]),
-                retry_bad=bool(run_config["retry_bad"]),
-                retry_k=int(run_config["retry_k"]),
-                retry_max_tokens=int(run_config["retry_max_tokens"]),
-                raw_output_path=str(raw_path),
-                metadata_path=str(metadata_path),
-                limit=args.limit,
+            cmd = build_run_command(
+                args=args,
+                run_config=run_config,
+                output_path=output_path,
+                raw_path=raw_path,
+                metadata_path=metadata_path,
             )
-            print(f"Finished {name} in {(time.time() - started) / 60:.2f} minutes")
+            print("Command:")
+            print(" ".join(cmd))
+            proc = subprocess.run(cmd)
+            elapsed = time.time() - started
+            if proc.returncode != 0:
+                print(f"Run failed: {name} returncode={proc.returncode}")
+                write_failed_metadata(
+                    metadata_path,
+                    args=args,
+                    run_config=run_config,
+                    output_path=output_path,
+                    raw_path=raw_path,
+                    returncode=proc.returncode,
+                    elapsed_seconds=elapsed,
+                )
+                if not args.continue_on_failure:
+                    raise SystemExit(proc.returncode)
+            else:
+                print(f"Finished {name} in {elapsed / 60:.2f} minutes")
 
         metadata = load_metadata(metadata_path)
         row = flatten_result(run_config, metadata)
