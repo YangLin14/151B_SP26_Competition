@@ -104,6 +104,31 @@ enable_thinking = true
 `generation_chunk_size=64`) so smoke tests are less likely to fail. For the final
 private submission, use the documented A30 command in `docs/A30_RUNBOOK.md`.
 
+## Public Parameter Sweep
+
+`sweep_inference_configs.py` automates public validation for these candidate
+settings:
+
+```text
+A. k=3, max_tokens=4096
+B. k=5, max_tokens=4096
+C. k=7, max_tokens=4096, generation_chunk_size=16
+D. k=5, max_tokens=6144
+E. k=5, retry_k=4
+```
+
+It calls `run_inference()` for each candidate, reads the generated metadata, and
+writes:
+
+```text
+results/sweeps/public_inference/summary.csv
+results/sweeps/public_inference/summary.json
+```
+
+The best config is selected primarily by public overall accuracy, with
+boxed-answer coverage, truncation rate, and retry rate used as secondary
+diagnostics.
+
 Chunking does not directly improve single-sample accuracy. It makes the run more
 stable on A30 and lets the pipeline add targeted extra samples for questions
 where the first pass has no boxed answer, a tie, or a length-truncated output.

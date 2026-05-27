@@ -92,11 +92,25 @@ results/submission_final.raw.jsonl
 results/submission_final.metadata.json
 ```
 
+## Run Public Parameter Sweep
+
+To compare the five planned public validation settings and automatically pick
+the best one:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_inference
+```
+
+For a quick smoke sweep, add `--limit 50`.
+
 ## Contents
 
 | File | Description |
 |---|---|
 | `run_inference.py` | Final single-entry inference pipeline |
+| `sweep_inference_configs.py` | Public validation sweep for inference settings |
 | `docs/A30_RUNBOOK.md` | Complete A30 setup, run, and validation commands |
 | `docs/FINAL_PIPELINE_DESIGN.md` | Method design, compliance notes, and hyperparameters |
 | `docs/GRADESCOPE_SUBMISSION_CHECKLIST.md` | Final submission checklist |

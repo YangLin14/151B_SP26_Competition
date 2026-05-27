@@ -179,6 +179,59 @@ print(json.dumps(meta.get("score_summary"), indent=2))
 PY
 ```
 
+## 5.1 Automatic Public Parameter Sweep
+
+To run all five planned settings and automatically summarize the best public
+validation result:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_inference
+```
+
+The sweep runs:
+
+```text
+A. k=3, max_tokens=4096
+B. k=5, max_tokens=4096
+C. k=7, max_tokens=4096, generation_chunk_size=16
+D. k=5, max_tokens=6144
+E. k=5, retry_k=4
+```
+
+Outputs:
+
+```text
+results/sweeps/public_inference/summary.csv
+results/sweeps/public_inference/summary.json
+results/sweeps/public_inference/*.metadata.json
+results/sweeps/public_inference/*.csv
+results/sweeps/public_inference/*.raw.jsonl
+```
+
+The script prints the best config and a private-run command shape using the
+winning parameters.
+
+For a faster smoke sweep before the full public run:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_smoke_50 \
+  --limit 50
+```
+
+To resume after an interrupted sweep, rerun the same command. Existing metadata
+files are skipped by default. To force rerun everything:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_inference \
+  --no-skip-existing
+```
+
 ## 6. Final Private Run
 
 Before a private run, make sure no stale process is still holding GPU memory:
