@@ -284,9 +284,13 @@ def score_public_if_available(
     if not data or "answer" not in data[0]:
         return None
 
-    from judger import Judger
+    try:
+        from judger import Judger
 
-    judger = Judger(strict_extract=False)
+        judger = Judger(strict_extract=False)
+    except Exception as exc:
+        return {"error": f"Public scoring unavailable: {exc}"}
+
     correct = 0
     mcq_total = mcq_correct = 0
     free_total = free_correct = 0
@@ -434,12 +438,71 @@ def print_score_summary(score_summary: dict[str, Any] | None) -> None:
         print("\n=== Public Score ===")
         print("No public answers found in data; skipping accuracy.")
         return
+    if score_summary.get("error"):
+        print("\n=== Public Score ===")
+        print(score_summary["error"])
+        return
 
     print("\n=== Public Score ===")
     for label, key in [("Overall", "overall"), ("MCQ", "mcq"), ("Free-form", "free_form")]:
         row = score_summary[key]
         acc = row.get("accuracy")
         print(f"{label}: {row['correct']} / {row['total']} ({_fmt_pct(acc)})")
+
+
+def selected_responses_from_raw_rows(
+    data: list[dict[str, Any]],
+    raw_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    rows_by_id = {int(row["id"]): row for row in raw_rows}
+    completed_data: list[dict[str, Any]] = []
+    selected_responses: list[str] = []
+    for item in data:
+        row = rows_by_id.get(int(item["id"]))
+        if row is None:
+            continue
+        samples = row.get("samples", [])
+        if not samples:
+            continue
+        sample_texts = [sample["text"] for sample in samples]
+        selected, _ = select_representative_response(item, sample_texts)
+        completed_data.append(item)
+        selected_responses.append(selected)
+    return completed_data, selected_responses
+
+
+def print_checkpoint_summary(
+    label: str,
+    raw_rows: list[dict[str, Any]],
+    data: list[dict[str, Any]],
+) -> None:
+    summary = compute_generation_summary(raw_rows)
+    boxed_any = summary["boxed_any"]
+    truncated_any = summary["truncated_any"]
+    retried = summary["retried"]
+    print(
+        f"{label}: health "
+        f"boxed_any={boxed_any['count']}/{boxed_any['total']} ({_fmt_pct(boxed_any['rate'])}), "
+        f"truncated_any={truncated_any['count']}/{truncated_any['total']} ({_fmt_pct(truncated_any['rate'])}), "
+        f"retried={retried['count']}/{retried['total']} ({_fmt_pct(retried['rate'])}), "
+        f"vote_statuses={summary['vote_status_counts']}"
+    )
+
+    completed_data, selected_responses = selected_responses_from_raw_rows(data, raw_rows)
+    score_summary = score_public_if_available(completed_data, selected_responses)
+    if score_summary is not None:
+        if score_summary.get("error"):
+            print(f"{label}: partial public accuracy unavailable ({score_summary['error']})")
+            return
+        overall = score_summary["overall"]
+        mcq = score_summary["mcq"]
+        free_form = score_summary["free_form"]
+        print(
+            f"{label}: partial public accuracy "
+            f"overall={overall['correct']}/{overall['total']} ({_fmt_pct(overall['accuracy'])}), "
+            f"mcq={mcq['correct']}/{mcq['total']} ({_fmt_pct(mcq['accuracy'])}), "
+            f"free={free_form['correct']}/{free_form['total']} ({_fmt_pct(free_form['accuracy'])})"
+        )
 
 
 def run_inference(
@@ -580,11 +643,14 @@ def run_inference(
                 f"Resume: loaded {len(per_question_samples)} completed questions "
                 f"from {raw_checkpoint_path}"
             )
+            checkpoint_rows = build_raw_rows(data, per_question_samples, retried_indices)
+            print_checkpoint_summary("Resume", checkpoint_rows, data)
 
     def save_checkpoint(label: str) -> None:
         checkpoint_rows = build_raw_rows(data, per_question_samples, retried_indices)
         write_jsonl(raw_checkpoint_path, checkpoint_rows)
         print(f"{label}: checkpointed {len(checkpoint_rows)} rows to {raw_checkpoint_path}")
+        print_checkpoint_summary(label, checkpoint_rows, data)
 
     def generate_for_indices(
         indices: list[int],

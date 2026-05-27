@@ -318,6 +318,27 @@ checkpoints after every generation chunk by writing the raw JSONL file. If a run
 is killed, rerun the exact same command with the same `--raw-output-path`; the
 script will resume completed questions by default.
 
+After every checkpoint, the script prints compact health metrics:
+
+```text
+boxed_any
+truncated_any
+retried
+vote_statuses
+```
+
+If the input data includes answers, such as `data/public.jsonl`, it also prints
+partial public accuracy for the completed checkpoint rows:
+
+```text
+overall
+mcq
+free
+```
+
+So for public checkpoint testing you do not need a separate Python snippet to
+inspect accuracy or generation health.
+
 For long private inference, split the private set into 8 shards. Each shard
 produces a partial CSV and raw checkpoint. If a shard is interrupted, rerun the
 same command for that shard.

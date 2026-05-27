@@ -77,6 +77,8 @@ answer-only string.
 For DSMLP wall-time limits, `run_inference.py` supports:
 
 - per-chunk raw JSONL checkpoints
+- per-checkpoint health summaries printed to stdout
+- per-checkpoint public partial accuracy when labels are available
 - automatic resume from `--raw-output-path`
 - `--start-index` / `--end-index` private-set shards
 - `merge_submission_shards.py` for combining partial CSVs
