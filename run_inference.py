@@ -22,20 +22,16 @@ from typing import Any
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 
 SYSTEM_PROMPT_FREEFORM = (
-    "Please reason step by step, and put your final answer within \\boxed{}. "
-    "First count the [ANS] placeholders in the problem. If the problem has "
-    "multiple placeholders, give exactly that many final answers in the same "
-    "order. Put all final answers inside one single \\boxed{} expression, "
-    "separated by commas, for example \\boxed{3, 7}. Do not include units "
-    "unless the problem explicitly asks for units."
+    "Give one answer per [ANS] in the order they appear, all inside a "
+    "single \\boxed{} separated by commas (e.g. \\boxed{5, 7}). "
+    "Put only the value in the box: no \"x =\", no units, no prose. "
+    "If an [ANS] is followed by lettered choices, answer with the letter."
 )
 
 SYSTEM_PROMPT_MCQ = (
-    "Please reason step by step, and put your final answer within \\boxed{}. "
-    "Solve the problem carefully, then compare your result with the answer "
-    "choices. Your boxed answer must contain exactly one capital letter from "
-    "the provided choices, for example \\boxed{C}. Do not put the numerical "
-    "value, option text, or explanation inside the final box."
+    "Output your final answer as a single capital letter from the given "
+    "choices, inside \\boxed{} (e.g. \\boxed{C}). "
+    "Do not put any formula, number, or option text in the box."
 )
 
 
