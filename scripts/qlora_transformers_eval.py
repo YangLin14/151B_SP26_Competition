@@ -30,6 +30,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
     parser.add_argument(
+        "--load-in-4bit",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Load model with bitsandbytes 4-bit quantization. Use --no-load-in-4bit on unstable H100 MIG nodes.",
+    )
+    parser.add_argument(
+        "--attn-implementation",
+        default="sdpa",
+        choices=["sdpa", "eager"],
+        help="Attention implementation for Transformers eval.",
+    )
+    parser.add_argument(
         "--enable-thinking",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -130,20 +142,25 @@ def main() -> None:
             )
         )
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True,
-    )
+    model_kwargs = {
+        "device_map": "auto",
+        "trust_remote_code": True,
+        "attn_implementation": args.attn_implementation,
+    }
+    if args.load_in_4bit:
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+        )
+    else:
+        model_kwargs["torch_dtype"] = torch.bfloat16
 
     print("Loading model:", args.model_id)
     model = AutoModelForCausalLM.from_pretrained(
         args.model_id,
-        quantization_config=bnb_config,
-        device_map="auto",
-        trust_remote_code=True,
-        attn_implementation="sdpa",
+        **model_kwargs,
     )
 
     if args.adapter_path:
@@ -224,6 +241,8 @@ def main() -> None:
         "top_k": args.top_k,
         "repetition_penalty": args.repetition_penalty,
         "enable_thinking": args.enable_thinking,
+        "load_in_4bit": args.load_in_4bit,
+        "attn_implementation": args.attn_implementation,
         "output_path": str(output_path),
         "eval_backend": "transformers",
     }

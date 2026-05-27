@@ -50,6 +50,23 @@ If that still fails on the current DSMLP GPU/node, skip vLLM for now and use
 prompt optimization and public-trace generation; adapter comparison already uses
 Transformers.
 
+On H100 MIG nodes, if Transformers generation crashes with `Floating point
+exception (core dumped)`, avoid the bitsandbytes 4-bit generation path and use
+full bfloat16 plus eager attention:
+
+```bash
+python scripts/qlora_transformers_eval.py \
+  --data-path outputs/qlora_sft_public_smoke/public_train_split.jsonl \
+  --n-eval 5 \
+  --max-input-length 2048 \
+  --max-new-tokens 512 \
+  --enable-thinking \
+  --no-load-in-4bit \
+  --attn-implementation eager \
+  --output-path results/node_smoke_transformers_bf16_5.jsonl \
+  --tracker-eval-id node_smoke_transformers_bf16_5
+```
+
 If Python 3.11 is unavailable but Python 3.12 is installed:
 
 ```bash
