@@ -42,9 +42,9 @@ reason, the final pipeline does not use:
 - external APIs
 - manual answer editing
 
-The previous Python-first notebook and `run_colab.py` are useful for local
-experimentation, but they are not the final submission path because they execute
-generated Python with `subprocess`.
+Previous Python-first experiments are useful for local analysis, but they are
+not the final submission path because they execute generated Python with
+`subprocess`.
 
 ## Inference Flow
 
@@ -126,4 +126,3 @@ The pipeline writes metadata next to the CSV, including:
 vLLM sampling is stochastic, so exact text may differ between runs. The expected
 behavior should be consistent because all hyperparameters are fixed in code and
 documented here.
-

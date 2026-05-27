@@ -93,9 +93,8 @@ results/submission_final.metadata.json
 | `docs/A30_RUNBOOK.md` | Complete A30 setup, run, and validation commands |
 | `docs/FINAL_PIPELINE_DESIGN.md` | Method design, compliance notes, and hyperparameters |
 | `docs/GRADESCOPE_SUBMISSION_CHECKLIST.md` | Final submission checklist |
-| `starter_code_cse151b_comp.ipynb` | Original starter notebook |
 | `judger.py` | Response scoring logic |
 | `utils.py` | Utilities used by `judger.py` |
 | `data/public.jsonl` | Public dataset with ground-truth answers |
 | `data/private.jsonl` | Private dataset for Kaggle submission |
-| `results/` | Output files written at runtime |
+| `results/` | Runtime output directory created by `run_inference.py` |
