@@ -156,6 +156,29 @@ print("elapsed minutes:", meta["elapsed_seconds"] / 60)
 PY
 ```
 
+The run also prints and stores `generation_summary` in the metadata. Use it to
+detect problems:
+
+```text
+Boxed coverage any sample   should be high; low values mean final answers are not extractable.
+Truncated any sample        high values mean max_tokens is too small.
+Adaptive retry used         high values mean many first-pass votes were low confidence.
+Vote statuses               majority is best; all_none and tie_first are warning signs.
+Average tokens/sample       helps estimate whether outputs are hitting the token budget.
+```
+
+To inspect it after any run:
+
+```bash
+python - <<'PY'
+import json
+from pathlib import Path
+meta = json.loads(Path("results/submission_final.metadata.json").read_text())
+print(json.dumps(meta["generation_summary"], indent=2))
+print(json.dumps(meta.get("score_summary"), indent=2))
+PY
+```
+
 ## 6. Final Private Run
 
 Before a private run, make sure no stale process is still holding GPU memory:

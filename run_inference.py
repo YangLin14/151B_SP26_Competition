@@ -298,6 +298,120 @@ def score_public_if_available(
     }
 
 
+def compute_generation_summary(raw_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    total = len(raw_rows)
+    total_samples = 0
+    total_tokens = 0
+    boxed_any = 0
+    boxed_all = 0
+    retried = 0
+    truncated_any = 0
+    truncated_all = 0
+    vote_status_counts: dict[str, int] = {}
+    sample_count_counts: dict[str, int] = {}
+
+    for row in raw_rows:
+        samples = row.get("samples", [])
+        total_samples += len(samples)
+        total_tokens += sum(int(sample.get("n_tokens") or 0) for sample in samples)
+
+        boxed_flags = [extract_boxed(sample.get("text")) is not None for sample in samples]
+        if any(boxed_flags):
+            boxed_any += 1
+        if boxed_flags and all(boxed_flags):
+            boxed_all += 1
+
+        truncated_flags = [sample.get("finish_reason") == "length" for sample in samples]
+        if any(truncated_flags):
+            truncated_any += 1
+        if truncated_flags and all(truncated_flags):
+            truncated_all += 1
+
+        if row.get("retried"):
+            retried += 1
+
+        status = str(row.get("vote_status") or "unknown")
+        vote_status_counts[status] = vote_status_counts.get(status, 0) + 1
+
+        sample_count_key = str(len(samples))
+        sample_count_counts[sample_count_key] = sample_count_counts.get(sample_count_key, 0) + 1
+
+    return {
+        "num_questions": total,
+        "total_samples": total_samples,
+        "avg_samples_per_question": total_samples / total if total else 0.0,
+        "avg_tokens_per_sample": total_tokens / total_samples if total_samples else 0.0,
+        "boxed_any": {"count": boxed_any, "total": total, "rate": boxed_any / total if total else 0.0},
+        "boxed_all": {"count": boxed_all, "total": total, "rate": boxed_all / total if total else 0.0},
+        "truncated_any": {
+            "count": truncated_any,
+            "total": total,
+            "rate": truncated_any / total if total else 0.0,
+        },
+        "truncated_all": {
+            "count": truncated_all,
+            "total": total,
+            "rate": truncated_all / total if total else 0.0,
+        },
+        "retried": {"count": retried, "total": total, "rate": retried / total if total else 0.0},
+        "vote_status_counts": vote_status_counts,
+        "sample_count_counts": sample_count_counts,
+    }
+
+
+def _fmt_pct(rate: float | None) -> str:
+    if rate is None:
+        return "n/a"
+    return f"{rate * 100:.2f}%"
+
+
+def print_generation_summary(summary: dict[str, Any]) -> None:
+    print("\n=== Generation Summary ===")
+    print(f"Questions: {summary['num_questions']}")
+    print(f"Total samples: {summary['total_samples']}")
+    print(f"Average samples/question: {summary['avg_samples_per_question']:.2f}")
+    print(f"Average tokens/sample: {summary['avg_tokens_per_sample']:.2f}")
+
+    boxed_any = summary["boxed_any"]
+    boxed_all = summary["boxed_all"]
+    truncated_any = summary["truncated_any"]
+    truncated_all = summary["truncated_all"]
+    retried = summary["retried"]
+
+    print(
+        "Boxed coverage any sample: "
+        f"{boxed_any['count']} / {boxed_any['total']} ({_fmt_pct(boxed_any['rate'])})"
+    )
+    print(
+        "Boxed coverage all samples: "
+        f"{boxed_all['count']} / {boxed_all['total']} ({_fmt_pct(boxed_all['rate'])})"
+    )
+    print(
+        "Truncated any sample: "
+        f"{truncated_any['count']} / {truncated_any['total']} ({_fmt_pct(truncated_any['rate'])})"
+    )
+    print(
+        "Truncated all samples: "
+        f"{truncated_all['count']} / {truncated_all['total']} ({_fmt_pct(truncated_all['rate'])})"
+    )
+    print(f"Adaptive retry used: {retried['count']} / {retried['total']} ({_fmt_pct(retried['rate'])})")
+    print(f"Vote statuses: {summary['vote_status_counts']}")
+    print(f"Samples/question distribution: {summary['sample_count_counts']}")
+
+
+def print_score_summary(score_summary: dict[str, Any] | None) -> None:
+    if score_summary is None:
+        print("\n=== Public Score ===")
+        print("No public answers found in data; skipping accuracy.")
+        return
+
+    print("\n=== Public Score ===")
+    for label, key in [("Overall", "overall"), ("MCQ", "mcq"), ("Free-form", "free_form")]:
+        row = score_summary[key]
+        acc = row.get("accuracy")
+        print(f"{label}: {row['correct']} / {row['total']} ({_fmt_pct(acc)})")
+
+
 def run_inference(
     data_path: str = "data/private.jsonl",
     output_path: str = "results/submission_final.csv",
@@ -489,6 +603,7 @@ def run_inference(
 
     elapsed = time.time() - start_time
     score_summary = score_public_if_available(data, selected_responses)
+    generation_summary = compute_generation_summary(raw_rows)
     metadata = {
         "model_id": model_id,
         "data_path": data_path,
@@ -515,6 +630,7 @@ def run_inference(
         "num_retried": len(retry_indices),
         "limit": limit,
         "elapsed_seconds": elapsed,
+        "generation_summary": generation_summary,
         "score_summary": score_summary,
     }
     if metadata_path is None:
@@ -528,13 +644,8 @@ def run_inference(
     print(f"Saved raw generations: {raw_output_path}")
     print(f"Saved metadata: {metadata_path}")
     print(f"Elapsed: {elapsed / 60:.1f} minutes")
-    if score_summary is not None:
-        overall = score_summary["overall"]
-        print(
-            "Public score: "
-            f"{overall['correct']} / {overall['total']} "
-            f"({overall['accuracy'] * 100:.2f}%)"
-        )
+    print_generation_summary(generation_summary)
+    print_score_summary(score_summary)
 
     return str(out_path)
 

@@ -146,6 +146,12 @@ The pipeline writes metadata next to the CSV, including:
 - chunk and retry settings
 - elapsed time
 - optional public-set score if run on `data/public.jsonl`
+- generation health summary:
+  - boxed-answer coverage
+  - truncation rates
+  - retry rate
+  - vote-status counts
+  - average samples and tokens
 
 vLLM sampling is stochastic, so exact text may differ between runs. The expected
 behavior should be consistent because all hyperparameters are fixed in code and
