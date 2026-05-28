@@ -26,36 +26,116 @@ BASE_CONFIG: dict[str, Any] = {
     "generation_chunk_size": 32,
 }
 
+SWEEP_PRESETS: dict[str, list[dict[str, Any]]] = {
+    "a30-long": [
+        {
+            "name": "A_k5_tok24576",
+            "description": "current strong baseline: k=5, max_tokens=24576",
+            "k": 5,
+            "max_tokens": 24576,
+        },
+        {
+            "name": "B_k7_tok24576_chunk16_seq6",
+            "description": "more self-consistency: k=7, max_tokens=24576, chunk=16, seqs=6",
+            "k": 7,
+            "max_tokens": 24576,
+            "max_num_seqs": 6,
+            "generation_chunk_size": 16,
+        },
+        {
+            "name": "C_k3_tok24576",
+            "description": "cheaper long-thinking baseline: k=3, max_tokens=24576",
+            "k": 3,
+            "max_tokens": 24576,
+        },
+        {
+            "name": "D_k5_tok16384",
+            "description": "middle token budget: k=5, max_tokens=16384",
+            "k": 5,
+            "max_tokens": 16384,
+            "retry_max_tokens": 24576,
+        },
+        {
+            "name": "E_k5_tok24576_retry4",
+            "description": "stronger adaptive retry: k=5, max_tokens=24576, retry_k=4",
+            "k": 5,
+            "max_tokens": 24576,
+            "retry_k": 4,
+        },
+    ],
+    "quick-short": [
+        {
+            "name": "A_k3_tok4096",
+            "description": "fast short baseline: k=3, max_tokens=4096",
+            "k": 3,
+            "max_tokens": 4096,
+            "retry_max_tokens": 8192,
+        },
+        {
+            "name": "B_k5_tok4096",
+            "description": "fast self-consistency: k=5, max_tokens=4096",
+            "k": 5,
+            "max_tokens": 4096,
+            "retry_max_tokens": 8192,
+        },
+        {
+            "name": "C_k7_tok4096_chunk16_seq6",
+            "description": "fast k=7: max_tokens=4096, chunk=16, seqs=6",
+            "k": 7,
+            "max_tokens": 4096,
+            "max_num_seqs": 6,
+            "generation_chunk_size": 16,
+            "retry_max_tokens": 8192,
+        },
+        {
+            "name": "D_k5_tok6144",
+            "description": "slightly longer short baseline: k=5, max_tokens=6144",
+            "k": 5,
+            "max_tokens": 6144,
+            "retry_max_tokens": 12288,
+        },
+        {
+            "name": "E_k5_tok4096_retry4",
+            "description": "fast stronger adaptive retry: k=5, max_tokens=4096, retry_k=4",
+            "k": 5,
+            "max_tokens": 4096,
+            "retry_k": 4,
+            "retry_max_tokens": 8192,
+        },
+    ],
+}
+
 SWEEP_CONFIGS: list[dict[str, Any]] = [
     {
-        "name": "A_k3_tok24576",
-        "description": "k=3, max_tokens=24576",
+        "name": "A_k5_tok24576",
+        "description": "current strong baseline: k=5, max_tokens=24576",
+        "k": 5,
+        "max_tokens": 24576,
+    },
+    {
+        "name": "B_k7_tok24576_chunk16_seq6",
+        "description": "more self-consistency: k=7, max_tokens=24576, chunk=16, seqs=6",
+        "k": 7,
+        "max_tokens": 24576,
+        "max_num_seqs": 6,
+        "generation_chunk_size": 16,
+    },
+    {
+        "name": "C_k3_tok24576",
+        "description": "cheaper long-thinking baseline: k=3, max_tokens=24576",
         "k": 3,
         "max_tokens": 24576,
     },
     {
-        "name": "B_k5_tok24576",
-        "description": "k=5, max_tokens=24576",
+        "name": "D_k5_tok16384",
+        "description": "middle token budget: k=5, max_tokens=16384",
         "k": 5,
-        "max_tokens": 24576,
+        "max_tokens": 16384,
+        "retry_max_tokens": 24576,
     },
     {
-        "name": "C_k7_tok24576_chunk16",
-        "description": "k=7, max_tokens=24576, generation_chunk_size=16",
-        "k": 7,
-        "max_tokens": 24576,
-        "generation_chunk_size": 16,
-    },
-    {
-        "name": "D_k5_tok32768",
-        "description": "k=5, max_tokens=32768",
-        "k": 5,
-        "max_tokens": 32768,
-        "retry_max_tokens": 32768,
-    },
-    {
-        "name": "E_k5_retry4",
-        "description": "k=5, retry_k=4",
+        "name": "E_k5_tok24576_retry4",
+        "description": "stronger adaptive retry: k=5, max_tokens=24576, retry_k=4",
         "k": 5,
         "max_tokens": 24576,
         "retry_k": 4,
@@ -67,10 +147,24 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sweep public inference configs")
     parser.add_argument("--data-path", default="data/public.jsonl")
     parser.add_argument("--output-dir", default="results/sweeps/public_inference")
+    parser.add_argument(
+        "--preset",
+        choices=sorted(SWEEP_PRESETS),
+        default="a30-long",
+        help="Config preset to run. a30-long is the recommended native-vLLM A30 sweep.",
+    )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--start-index", type=int, default=0)
+    parser.add_argument("--end-index", type=int, default=None)
     parser.add_argument("--only", default=None, help="Comma-separated config names to run.")
     parser.add_argument("--skip-existing", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--continue-on-failure", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--cooldown-seconds",
+        type=float,
+        default=10.0,
+        help="Pause between candidates so CUDA/NCCL cleanup settles before the next vLLM process.",
+    )
     parser.add_argument("--model-id", default="Qwen/Qwen3-4B-Thinking-2507")
     return parser.parse_args()
 
@@ -137,6 +231,11 @@ def flatten_result(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str
         "generation_chunk_size": metadata.get("generation_chunk_size"),
         "retry_k": metadata.get("retry_k"),
         "retry_max_tokens": metadata.get("retry_max_tokens"),
+        "max_num_seqs": metadata.get("max_num_seqs"),
+        "max_num_batched_tokens": metadata.get("max_num_batched_tokens"),
+        "start_index": metadata.get("start_index"),
+        "end_index": metadata.get("end_index"),
+        "limit": metadata.get("limit"),
         "output_path": metadata.get("output_path"),
         "metadata_path": "",
     }
@@ -198,8 +297,8 @@ def write_summary(output_dir: Path, rows: list[dict[str, Any]]) -> None:
             f"--max-tokens {best['max_tokens']} "
             "--max-model-len 32768 "
             "--gpu-memory-utilization 0.90 "
-            "--max-num-seqs 8 "
-            "--max-num-batched-tokens 16384 "
+            f"--max-num-seqs {best['max_num_seqs']} "
+            f"--max-num-batched-tokens {best['max_num_batched_tokens']} "
             "--no-enable-prefix-caching "
             f"--generation-chunk-size {best['generation_chunk_size']} "
             "--retry-bad "
@@ -255,6 +354,10 @@ def build_run_command(
     cmd.append("--retry-bad" if run_config["retry_bad"] else "--no-retry-bad")
     if args.limit is not None:
         cmd.extend(["--limit", str(args.limit)])
+    if args.start_index:
+        cmd.extend(["--start-index", str(args.start_index)])
+    if args.end_index is not None:
+        cmd.extend(["--end-index", str(args.end_index)])
     return cmd
 
 
@@ -288,6 +391,8 @@ def write_failed_metadata(
         "retry_bad": run_config["retry_bad"],
         "retry_k": run_config["retry_k"],
         "retry_max_tokens": run_config["retry_max_tokens"],
+        "start_index": args.start_index,
+        "end_index": args.end_index,
         "limit": args.limit,
         "elapsed_seconds": elapsed_seconds,
         "score_summary": None,
@@ -308,8 +413,9 @@ def main() -> None:
     if args.only:
         selected = {name.strip() for name in args.only.split(",") if name.strip()}
 
+    sweep_configs = SWEEP_PRESETS[args.preset]
     rows: list[dict[str, Any]] = []
-    for config in SWEEP_CONFIGS:
+    for index, config in enumerate(sweep_configs):
         if selected and config["name"] not in selected:
             continue
 
@@ -359,6 +465,10 @@ def main() -> None:
         row["metadata_path"] = str(metadata_path)
         rows.append(row)
         write_summary(output_dir, rows)
+
+        if args.cooldown_seconds > 0 and index < len(sweep_configs) - 1:
+            print(f"\nCooling down for {args.cooldown_seconds:.1f} seconds before next candidate...")
+            time.sleep(args.cooldown_seconds)
 
 
 if __name__ == "__main__":

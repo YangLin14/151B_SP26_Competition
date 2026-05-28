@@ -3,6 +3,14 @@
 This is the complete command sequence for running the final legal pipeline on
 one NVIDIA A30 GPU.
 
+## 0. Launch DSMLP Pod
+
+Request A30 GPU:
+
+```bash
+launch-sp26-cuda128.sh -W CSE151B_SP26_A00 -g 1 -c 8 -m 32 -v a30
+```
+
 ## 1. Confirm Branch And Files
 
 From the repository root:
@@ -35,13 +43,32 @@ Expected count in this repo:
 
 ## 2. Create Environment
 
-Use Python 3.11 on the A30 Linux machine. Start from a fresh environment if the
-current env reports `vllm==0.7.x`; that version falls back to the Transformers
-backend for `Qwen3ForCausalLM`.
+Use Python 3.11 on the A30 Linux machine. Do not use Python 3.13: the
+`vllm==0.9.1` dependency stack needs `xformers==0.0.30`, which currently has
+Linux wheels for Python 3.9-3.12 but not Python 3.13.
+
+Start from a fresh environment if the current env reports Python 3.13 or
+`vllm==0.7.x`; Python 3.13 cannot resolve the vLLM dependencies, and vLLM 0.7.x
+falls back to the Transformers backend for `Qwen3ForCausalLM`.
 
 ```bash
+deactivate 2>/dev/null || true
+python3.11 --version
+```
+
+If `python3.11` is not available on the pod, install it through `uv`:
+
+```bash
+uv python install 3.11
+```
+
+Then recreate the virtual environment:
+
+```bash
+rm -rf .venv
 uv venv .venv --python 3.11 --seed
 source .venv/bin/activate
+python --version
 ```
 
 Install the A30 inference stack:
@@ -204,23 +231,29 @@ PY
 
 ## 5.1 Automatic Public Parameter Sweep
 
-To run all five planned settings and automatically summarize the best public
-validation result:
+After the native-vLLM public 0-50 smoke test, the recommended next optimization
+step is an A30 long-thinking sweep on a larger public subset. This compares the
+settings most likely to improve accuracy under the observed health metrics:
+high `\boxed{}` coverage, high `</think>` completion, low truncation, and p95
+thinking length around 14k tokens.
 
 ```bash
 python sweep_inference_configs.py \
   --data-path data/public.jsonl \
-  --output-dir results/sweeps/public_inference
+  --output-dir results/sweeps/public_000_150_a30_long \
+  --preset a30-long \
+  --start-index 0 \
+  --end-index 150
 ```
 
-The sweep runs:
+The default `a30-long` sweep runs:
 
 ```text
-A. k=3, max_tokens=24576
-B. k=5, max_tokens=24576
-C. k=7, max_tokens=24576, generation_chunk_size=16
-D. k=5, max_tokens=32768
-E. k=5, retry_k=4
+A. k=5, max_tokens=24576
+B. k=7, max_tokens=24576, generation_chunk_size=16, max_num_seqs=6
+C. k=3, max_tokens=24576
+D. k=5, max_tokens=16384
+E. k=5, max_tokens=24576, retry_k=4
 ```
 
 Outputs:
@@ -240,7 +273,8 @@ Each sweep candidate runs in its own Python subprocess. This is intentional:
 when one vLLM run exits, CUDA memory and NCCL state are released by the process
 exit before the next candidate starts. If a candidate OOMs or exits non-zero,
 the sweep records it as `status=failed` in that candidate's metadata and keeps
-running the remaining candidates by default.
+running the remaining candidates by default. The script also pauses briefly
+between candidates with `--cooldown-seconds 10` by default.
 
 For a faster smoke sweep before the full public run:
 
@@ -248,7 +282,19 @@ For a faster smoke sweep before the full public run:
 python sweep_inference_configs.py \
   --data-path data/public.jsonl \
   --output-dir results/sweeps/public_smoke_50 \
+  --preset a30-long \
   --limit 50
+```
+
+To test the older short-token settings, use:
+
+```bash
+python sweep_inference_configs.py \
+  --data-path data/public.jsonl \
+  --output-dir results/sweeps/public_000_150_quick_short \
+  --preset quick-short \
+  --start-index 0 \
+  --end-index 150
 ```
 
 To resume after an interrupted sweep, rerun the same command. Existing metadata
@@ -257,7 +303,10 @@ files are skipped by default. To force rerun everything:
 ```bash
 python sweep_inference_configs.py \
   --data-path data/public.jsonl \
-  --output-dir results/sweeps/public_inference \
+  --output-dir results/sweeps/public_000_150_a30_long \
+  --preset a30-long \
+  --start-index 0 \
+  --end-index 150 \
   --no-skip-existing
 ```
 
@@ -266,7 +315,10 @@ To stop immediately on the first failed candidate:
 ```bash
 python sweep_inference_configs.py \
   --data-path data/public.jsonl \
-  --output-dir results/sweeps/public_inference \
+  --output-dir results/sweeps/public_000_150_a30_long \
+  --preset a30-long \
+  --start-index 0 \
+  --end-index 150 \
   --no-continue-on-failure
 ```
 
