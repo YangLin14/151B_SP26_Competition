@@ -1,0 +1,1694 @@
+id,response
+758,"Okay, let's try to figure out this problem. So the question is about whether the sample average of household sizes from a simple random sample of individuals in Vancouver is biased upwards, downwards, or unbiased.
+
+First, I need to recall what a simple random sample (SRS) is. In an SRS, every individual in the population has an equal chance of being selected. Here, the population is all individuals living in Vancouver. Each person is sampled, and they report their household size.
+
+Wait, household size is the number of people in that household. So if someone is part of a household with, say, 4 people, they will report 4. But the key here is that when we take a sample of individuals, each individual's response is their household size. So the sample average here is the average of the household sizes reported by the sampled individuals.
+
+Hmm, but the question is about estimating the average household size. Wait, the average household size in the population is the average number of people per household. But here, the sample is of individuals, not households. So this is a bit tricky.
+
+Let me think. Suppose we have a population of households. Each household has a certain size, say h1, h2, ..., hn. Then the total number of individuals is the sum of hi. The average household size is (h1 + h2 + ... + hn)/n.
+
+But in this problem, the sample is of individuals. So when we take a simple random sample of individuals, each individual tells us their household size. So each individual's response is hi (the size of their household). So if we take a sample of k individuals, the sample average would be the average of their hi's.
+
+Wait, but the population parameter we want to estimate is the average household size, which is the average number of people per household. However, in this case, the sample average is the average of the household sizes reported by individuals. Let's think in terms of expectation.
+
+Let’s denote the true average household size as μ (the average number of people per household). But here, the sample average is calculated as the average of the household sizes reported by the sampled individuals. Let's call this sample average Y.
+
+For each individual, their household size is a random variable. But in reality, the household size is a fixed number for each household. So if we consider the population of individuals, each individual has a household size that's part of a household.
+
+Wait, maybe it's better to model this with a concrete example. Let's say Vancouver has two households: one with 2 people (household A) and one with 3 people (household B). So total individuals: 5. The average household size (number of people per household) is (2 + 3)/2 = 2.5.
+
+Now, if we take a simple random sample of individuals. Let's say we sample one individual. The possible samples are:
+
+- Sample household A's individual: probability 2/5. The reported household size is 2. So the sample average here is 2.
+
+- Sample household B's individual: probability 3/5. The reported household size is 3. So sample average here is 3.
+
+The expected value of the sample average (which is just the single value here) is (2/5)*2 + (3/5)*3 = (4/5) + (9/5) = 13/5 = 2.6.
+
+But the true average household size (the parameter we want to estimate) is 2.5. So in this case, the expected value of the sample average is 2.6, which is higher than 2.5. So the estimator is biased upwards.
+
+Wait, but the problem states ""the sample average of household size"". Wait, in this example, the sample average is just the household size of the individual sampled. So in this case, the estimator has an expected value of 2.6, which is higher than the true average (2.5). So it's biased upwards.
+
+But wait, maybe I need to think about a larger sample. Let's take a sample of two individuals. Let's see.
+
+Total individuals: 5. Possible samples of size 2:
+
+- Both from A: probability (2/5)(1/4) = 2/20. Sample average: (2 + 2)/2 = 2.
+
+- One from A, one from B: probability (2/5)(3/4) + (3/5)(2/4) = 6/20 + 6/20 = 12/20. Sample average: (2 + 3)/2 = 2.5.
+
+- Both from B: probability (3/5)(2/4) = 6/20. Sample average: (3 + 3)/2 = 3.
+
+Expected value of sample average: (2/20)*2 + (12/20)*2.5 + (6/20)*3 = (4/20) + (30/20) + (18/20) = 52/20 = 2.6.
+
+Same as before. So even with a sample of two individuals, the expected value is 2.6, which is higher than the true average of 2.5. So the estimator is biased upwards.
+
+Hmm, so this suggests that the sample average of the household sizes reported by individuals is biased upwards.
+
+Wait, but why? Because in the population of individuals, each household with size h contributes h individuals. So when you take a sample of individuals, you are more likely to sample from larger households. So the sample average of household sizes (from individuals) will tend to be higher than the true average household size (which is the average number of people per household).
+
+Let me think in terms of the law of large numbers or expectation.
+
+Let’s denote that the population of individuals has a certain distribution. Let’s say there are N households, each with size h_i (i = 1 to N). The total number of individuals is H = sum_{i=1}^N h_i.
+
+The average household size (the parameter we want) is μ = (sum h_i)/N.
+
+But when we take a simple random sample of individuals, each individual is equally likely to be chosen. For each individual in household i, their household size is h_i. So the expected value of the sample average (if we take a sample of size n) would be E[ (sum_{j=1}^n X_j)/n ] where X_j is the household size of the j-th individual.
+
+But each X_j is h_i with probability h_i / H (since each individual has a probability of 1/H of being chosen, and there are h_i individuals in household i).
+
+Wait, the expectation E[X_j] = sum_{i=1}^N [h_i / H] * h_i = (sum h_i^2)/H.
+
+So the expected sample average is (sum h_i^2)/H.
+
+But the true average household size μ = (sum h_i)/N.
+
+So unless sum h_i^2 / H = (sum h_i)/N, which would mean that the estimator is unbiased, but in general, sum h_i^2 / H is greater than (sum h_i)/N, because by Cauchy-Schwarz or variance considerations.
+
+Wait, for example, in the earlier case with two households: h1=2, h2=3. So sum h_i =5, N=2. μ = 2.5.
+
+sum h_i^2 =4 +9=13. H=5.
+
+sum h_i^2 / H =13/5=2.6, which is greater than μ=2.5. So the expected value of the sample average is higher than the true average. Therefore, the estimator is biased upwards.
+
+In general, sum h_i^2 >= (sum h_i)^2 / N by Cauchy-Schwarz (since sum h_i^2 >= ( (sum h_i)^2 ) / N ), so sum h_i^2 / H >= (sum h_i)^2 / (N H) = ( (sum h_i) / N ) * (sum h_i) / H.
+
+Wait, but H = sum h_i, so (sum h_i)^2 / (N H) = (sum h_i)/N. So sum h_i^2 / H >= (sum h_i)/N. Equality holds only if all h_i are equal.
+
+So yes, sum h_i^2 / H is greater than or equal to (sum h_i)/N, with equality only when all households have the same size. Therefore, the expected value of the sample average (of household sizes reported by individuals) is greater than or equal to the true average household size. So it's systematically biased upwards.
+
+Therefore, the answer should be C.
+
+Wait, but the problem says ""the sample average of household size"". Wait, the problem states: ""Those sampled are asked to report their household sizes. The sample average of household size will be:""
+
+So in the problem, the sample average is the average of the household sizes (as reported by the individuals). So in the example, the sample average is higher than the true average household size (the average number of people per household). Therefore, the estimator is biased upwards.
+
+So the answer is C.
+
+Let me check if there's another angle. Suppose the question had been about sampling households instead of individuals. Then the average household size would be unbiased. But here it's individuals, so it's biased upwards.
+
+Yes, this is a classic case of a biased estimator when sampling individuals instead of households. For example, if you want to estimate the average household size, sampling individuals leads to an overestimation because larger households contribute more individuals to the sample.
+
+So the answer is C.
+</think>
+
+[ANS]C"
+759,"Okay, let's see. The question is about the sampling distribution of the sample mean. Hmm, I remember from statistics that when you take samples from a population and calculate the sample means, the distribution of those sample means tends to follow a certain pattern.
+
+The question says, ""by what distribution can you often approximate it?"" So, the options are reverse-J-shaped, uniform, normal, or none of the above.
+
+Wait, the Central Limit Theorem (CLT) comes to mind here. The CLT states that if you have a large enough sample size, the sampling distribution of the sample mean will be approximately normal, regardless of the shape of the population distribution. That's a key point. So even if the original population isn't normal, the sample means will approach a normal distribution as the sample size increases.
+
+Let me check the options again. Option C is normal distribution. So that should be the answer. But wait, the question says ""in general you cannot know exactly,"" which makes sense because it depends on the population and sample size. But the approximation we often use is the normal distribution.
+
+Option A is reverse-J-shaped. I think that's a type of distribution that's skewed, like a J-shaped but reversed. But the CLT says it becomes normal, so that's not it. Option B is uniform distribution, which doesn't seem right either. So the answer should be C.
+
+Wait, but the problem says ""by what distribution can you often approximate it?"" So the answer is normal distribution. Let me confirm. Yeah, CLT is the main reason here. So the answer is C.
+</think>
+
+[ANS] C
+
+\boxed{C}"
+760,"Okay, let's try to solve this problem step by step. The question is to find the sum of the series \(\sum_{n=1}^\infty \frac{ x^{4n - 1} }{4n - 1}\) using integration of series. 
+
+First, I remember that integrating power series can help find sums of series with denominators that are linear in n, like \(1/(4n - 1)\). Let's start by considering the general term. Let's denote the series as \(S(x) = \sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}\). 
+
+Maybe if we multiply both sides by \(x\) to make the exponent a multiple of 4? Wait, let's see. Let's first consider the derivative of \(S(x)\). If we take the derivative with respect to x, we can get rid of the denominator. Let's try that.
+
+Let \(S(x) = \sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}\). Then \(S'(x) = \sum_{n=1}^\infty \frac{d}{dx} \left( \frac{x^{4n - 1}}{4n - 1} \right) = \sum_{n=1}^\infty x^{4n - 2}\). 
+
+Simplify the exponent: \(4n - 2 = 4(n - 1) + 2\), so when n=1, the term is \(x^{2}\), n=2 is \(x^{6}\), n=3 is \(x^{10}\), etc. So \(S'(x) = x^2 + x^6 + x^{10} + \dots\). That's a geometric series with first term \(a = x^2\) and common ratio \(r = x^4\). 
+
+The sum of an infinite geometric series is \(a / (1 - r)\) when \(|r| < 1\). So here, \(S'(x) = \frac{x^2}{1 - x^4}\) as long as \(|x^4| < 1\), i.e., \(|x| < 1\). 
+
+Wait, but the problem doesn't specify the interval of convergence, but since we're dealing with power series, we can assume \(|x| < 1\) for now, and later check if the answer makes sense for other intervals (though the answer choices have logarithms and arctans, which are typically defined for all real x except maybe some points, so maybe the original series converges for \(|x| < 1\), but the answer is expressed in terms of functions that are defined for all x, so maybe we need to consider the antiderivative over a larger domain).
+
+Let's compute \(S(x)\) by integrating \(S'(x)\). So \(S(x) = \int S'(x) dx + C = \int \frac{x^2}{1 - x^4} dx + C\). 
+
+First, let's simplify \(\frac{x^2}{1 - x^4}\). Note that \(1 - x^4 = (1 - x^2)(1 + x^2) = (1 - x)(1 + x)(1 + x^2)\). So we can use partial fractions. Let's write \(\frac{x^2}{1 - x^4} = \frac{x^2}{(1 - x^2)(1 + x^2)} = \frac{A}{1 - x} + \frac{B}{1 + x} + \frac{Cx + D}{1 + x^2}\). But maybe it's easier to note that \(\frac{x^2}{1 - x^4} = \frac{1}{2} \left( \frac{1 + x^2}{1 - x^4} + \frac{1 - x^2}{1 - x^4} \right)\)? Wait, alternatively, divide numerator and denominator by \(x^2\): \(\frac{1}{x^2 - x^{-2}}\), but maybe not.
+
+Alternatively, recall that \(\frac{1}{1 - x^4} = \sum_{k=0}^\infty x^{4k}\), so \(\frac{x^2}{1 - x^4} = \sum_{k=0}^\infty x^{4k + 2}\), which is the same as the derivative we had before, so integrating term by term gives \(S(x) = \sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}\), which is correct.
+
+Let's compute the integral \(\int \frac{x^2}{1 - x^4} dx\). Let's use substitution. Let \(u = x^2\), then \(du = 2x dx\), but maybe better to use partial fractions.
+
+Let's write \(\frac{x^2}{1 - x^4} = \frac{x^2}{(1 - x^2)(1 + x^2)} = \frac{A}{1 - x} + \frac{B}{1 + x} + \frac{Cx + D}{1 + x^2}\). Wait, but since the numerator is even (x^2 is even) and the denominator is even (1 - x^4 is even), the partial fractions should have only even functions, so C = 0. Let's check:
+
+Let \(\frac{x^2}{(1 - x^2)(1 + x^2)} = \frac{A}{1 - x} + \frac{B}{1 + x} + \frac{D}{1 + x^2}\). Wait, maybe better to set \(1 - x^4 = (1 - x^2)(1 + x^2) = (1 - x)(1 + x)(1 + x^2)\), so the partial fraction decomposition for a rational function with quadratic factors is:
+
+\(\frac{x^2}{1 - x^4} = \frac{A}{1 - x} + \frac{B}{1 + x} + \frac{Cx + D}{1 + x^2}\)
+
+Multiply both sides by \(1 - x^4\):
+
+\(x^2 = A(1 + x)(1 + x^2) + B(1 - x)(1 + x^2) + (Cx + D)(1 - x^2)\)
+
+Let's plug in x = 1: \(1 = A(2)(2) + 0 + 0\) => \(4A = 1\) => \(A = 1/4\)
+
+x = -1: \(1 = 0 + B(2)(2) + 0\) => \(4B = 1\) => \(B = 1/4\)
+
+Now, expand the right-hand side:
+
+A(1 + x + x^2 + x^3) + B(1 - x + x^2 - x^3) + (Cx + D)(1 - x^2)
+
+= (1/4)(1 + x + x^2 + x^3) + (1/4)(1 - x + x^2 - x^3) + Cx(1 - x^2) + D(1 - x^2)
+
+= (1/4 + 1/4) + (1/4 x - 1/4 x) + (1/4 x^2 + 1/4 x^2) + (1/4 x^3 - 1/4 x^3) + Cx - Cx^3 + D - D x^2
+
+= 1/2 + 0 + (1/2)x^2 + 0 + Cx - Cx^3 + D - D x^2
+
+Combine like terms:
+
+Constant term: 1/2 + D
+
+x term: C
+
+x^2 term: (1/2 - D)
+
+x^3 term: -C
+
+Left-hand side is x^2, so coefficients:
+
+x^3: -C = 0 => C = 0
+
+x^2: 1/2 - D = 1 (since left-hand side has x^2 coefficient 1)
+
+x term: C = 0 (matches left-hand side, which has no x term)
+
+constant term: 1/2 + D = 0 (left-hand side has no constant term)
+
+Wait, left-hand side is x^2, so constant term is 0, x term is 0, x^2 term is 1, x^3 term is 0.
+
+So from x^3: -C = 0 => C=0
+
+x term: C=0, which is good.
+
+x^2 term: 1/2 - D = 1 => D = 1/2 - 1 = -1/2
+
+Constant term: 1/2 + D = 0 => D = -1/2. Perfect, that matches.
+
+So the partial fractions decomposition is:
+
+\(\frac{x^2}{1 - x^4} = \frac{1/4}{1 - x} + \frac{1/4}{1 + x} + \frac{0x - 1/2}{1 + x^2}\)
+
+Simplify:
+
+= \(\frac{1}{4(1 - x)} + \frac{1}{4(1 + x)} - \frac{1}{2(1 + x^2)}\)
+
+Now, integrate term by term:
+
+\(\int \frac{x^2}{1 - x^4} dx = \frac{1}{4} \int \frac{1}{1 - x} dx + \frac{1}{4} \int \frac{1}{1 + x} dx - \frac{1}{2} \int \frac{1}{1 + x^2} dx\)
+
+Compute each integral:
+
+\(\int \frac{1}{1 - x} dx = -\ln|1 - x| + C\)
+
+\(\int \frac{1}{1 + x} dx = \ln|1 + x| + C\)
+
+\(\int \frac{1}{1 + x^2} dx = \arctan x + C\)
+
+So putting it all together:
+
+\(\int \frac{x^2}{1 - x^4} dx = \frac{1}{4}(-\ln|1 - x|) + \frac{1}{4}(\ln|1 + x|) - \frac{1}{2} \arctan x + C\)
+
+Simplify the logarithms:
+
+= \(\frac{1}{4} \ln \left| \frac{1 + x}{1 - x} \right| - \frac{1}{2} \arctan x + C\)
+
+But wait, our original series \(S(x)\) is equal to this integral plus a constant? Wait, let's check the constant of integration. Let's see what \(S(x)\) is when x=0: the series starts at n=1, so when x=0, all terms are 0, so \(S(0) = 0\).
+
+Let's plug x=0 into the integral expression:
+
+\(\frac{1}{4} \ln \left| \frac{1 + 0}{1 - 0} \right| - \frac{1}{2} \arctan 0 + C = 0 - 0 + C = C\). So \(C = 0\) because \(S(0) = 0\). Wait, is that right?
+
+Wait, the integral we computed is \(S(x)\) because \(S'(x) = \frac{x^2}{1 - x^4}\), so \(S(x) = \int_0^x \frac{t^2}{1 - t^4} dt\), which is the definite integral from 0 to x, so the constant is 0. That makes sense.
+
+So \(S(x) = \frac{1}{4} \ln \left| \frac{1 + x}{1 - x} \right| - \frac{1}{2} \arctan x\). Wait, but let's check the answer choices. The answer choices have \(\frac{1}{4} \ln \left( \frac{|x + 1|}{|x - 1|} \right)\) which is the same as \(\frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right|\), but in our case, it's \(\frac{1}{4} \ln \left| \frac{x + 1}{1 - x} \right| = \frac{1}{4} \ln \left| \frac{x + 1}{-(x - 1)} \right| = \frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right| + \frac{1}{4} \ln 1 = \frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right|\) because \(\ln| -1 | = 0\). Wait, no: \(\ln|a/b| = \ln|a| - \ln|b|\), so \(\ln| (x + 1)/(1 - x) | = \ln|x + 1| - \ln|1 - x| = \ln|x + 1| + \ln|x - 1| - \ln|x - 1| - \ln|x - 1|? Wait, no: \(|1 - x| = |x - 1|\), so \(\ln| (x + 1)/(1 - x) | = \ln|x + 1| - \ln|x - 1|\). 
+
+Wait, the answer choices have \(\frac{1}{4} \ln \left( \frac{|x + 1|}{|x - 1|} \right)\), which is exactly \(\frac{1}{4} [\ln|x + 1| - \ln|x - 1|] = \frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right|\). In our integral result, we have \(\frac{1}{4} \ln \left| \frac{x + 1}{1 - x} \right| = \frac{1}{4} [\ln|x + 1| - \ln|1 - x|] = \frac{1}{4} [\ln|x + 1| - \ln|x - 1|] = \frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right|\), since \(|1 - x| = |x - 1|\). So that part is the same as the answer choices' logarithm term.
+
+Now, the arctan term: we have \(- \frac{1}{2} \arctan x\). Let's check the answer choices. The choices are:
+
+A. +1/4 arctan(x)
+
+B. -1/6 arctan(x)
+
+C. -1/4 arctan(x)
+
+D. +1/2 arctan(x)
+
+E. -1/7 arctan(x)
+
+F. -1/3 arctan(x)
+
+G. -1/5 arctan(x)
+
+H. -1/8 arctan(x)
+
+I. -1/2 arctan(x)
+
+J. -1/9 arctan(x)
+
+So our result is \(\frac{1}{4} \ln \left( \frac{|x + 1|}{|x - 1|} \right) - \frac{1}{2} \arctan x\), which is option I.
+
+Wait, let's verify with a specific value. Let's take x=0: the series is 0, and the expression gives \(\frac{1}{4} \ln(1) - \frac{1}{2} \arctan 0 = 0 - 0 = 0\), which is correct.
+
+Take x approaching 0 from the right, the series is approximately the first term: \(x^{3}/3\). Let's compute the derivative at x=0: \(S'(x) = x^2 + x^6 + \dots\), so \(S'(0) = 0\), which matches the derivative of our expression: derivative of \(\frac{1}{4} \ln| (x + 1)/(x - 1) |\) is \(\frac{1}{4} [1/(x + 1) + 1/(x - 1)] = \frac{1}{4} [ (x - 1 + x + 1) / (x^2 - 1) ] = \frac{1}{4} [2x / (x^2 - 1)] = x / [2(x^2 - 1)]\). Wait, maybe better to compute the Taylor series of our expression.
+
+The arctan x has Taylor series \(x - x^3/3 + x^5/5 - x^7/7 + \dots\), so \(-1/2 \arctan x = -x/2 + x^3/6 - x^5/10 + x^7/14 - \dots\).
+
+The logarithm term: \(\ln| (x + 1)/(x - 1) | = \ln| (1 + x)/(1 - x) | = 2 \sum_{k=0}^\infty \frac{x^{2k + 1}}{2k + 1}\) for |x| < 1 (since \(\ln(1 + x) = \sum_{k=1}^\infty (-1)^{k+1} x^k / k\), so \(\ln(1 + x) - \ln(1 - x) = 2 \sum_{k=0}^\infty x^{2k + 1}/(2k + 1)\)). Therefore, \(\frac{1}{4} \ln| (x + 1)/(1 - x) | = \frac{1}{2} \sum_{k=0}^\infty \frac{x^{2k + 1}}{2k + 1}\).
+
+So the entire expression \(S(x) = \frac{1}{2} \sum_{k=0}^\infty \frac{x^{2k + 1}}{2k + 1} - \frac{1}{2} \arctan x\).
+
+Let's write out the first few terms of the logarithm part: \(\frac{1}{2}(x + x^3/3 + x^5/5 + x^7/7 + \dots)\)
+
+The arctan part: \(\frac{1}{2}(x - x^3/3 + x^5/5 - x^7/7 + \dots)\)
+
+So subtracting them: \(\frac{1}{2}(x + x^3/3 + x^5/5 + \dots) - \frac{1}{2}(x - x^3/3 + x^5/5 - \dots) = \frac{1}{2}[2x^3/3 + 2x^7/7 + \dots] = x^3/3 + x^7/7 + \dots\)
+
+Wait, the original series is \(\sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}\). Let's write out the terms:
+
+n=1: \(x^{3}/3\)
+
+n=2: \(x^{7}/7\)
+
+n=3: \(x^{11}/11\)
+
+So the series is \(x^3/3 + x^7/7 + x^{11}/11 + \dots\)
+
+In the expression we have: \(x^3/3 + x^7/7 + x^{11}/11 + \dots\), which matches! Let's check the coefficients:
+
+From the logarithm term: \(\frac{1}{4} \ln( (1 + x)/(1 - x) ) = \frac{1}{4} [2(x + x^3/3 + x^5/5 + x^7/7 + x^9/9 + x^{11}/11 + \dots)] = \frac{1}{2}(x + x^3/3 + x^5/5 + x^7/7 + x^9/9 + x^{11}/11 + \dots)\)
+
+The arctan term: \(\frac{1}{2} \arctan x = \frac{1}{2}(x - x^3/3 + x^5/5 - x^7/7 + x^9/9 - x^{11}/11 + \dots)\)
+
+Subtracting them: \(\frac{1}{2}(x + x^3/3 + x^5/5 + x^7/7 + \dots) - \frac{1}{2}(x - x^3/3 + x^5/5 - x^7/7 + \dots) = \frac{1}{2}[2x^3/3 + 2x^7/7 + 2x^{11}/11 + \dots] = x^3/3 + x^7/7 + x^{11}/11 + \dots\), which is exactly the original series. Perfect!
+
+So the expression we have is \(\frac{1}{4} \ln \left| \frac{x + 1}{x - 1} \right| - \frac{1}{2} \arctan x\), which is the same as \(\frac{1}{4} \ln \left( \frac{|x + 1|}{|x - 1|} \right) - \frac{1}{2} \arctan x\). Looking at the answer choices, option I is exactly that: \(\frac{1}{4} \ln \left( \frac{|x + 1|}{|x - 1|} \right) - \frac{1}{2} \arctan x\).
+
+Let me just check the answer choices again to make sure. The choices are labeled A to J, with I being ""-1/2 arctan(x)"". Yes, option I is that.
+
+I think that's it. The key was recognizing that the derivative of the series is a geometric series, integrating it, and then simplifying the integral using partial fractions or known integrals, which leads to the logarithm term (related to the arctanh or ln(1+x)/(1-x)) and the arctan term. The critical step was realizing that the integral of \(x^2/(1 - x^4)\) gives the combination of logarithms and arctan, and matching the coefficients with the answer choices.
+
+Another way to think about it: the series \(\sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}\) is the antiderivative of \(\sum_{n=1}^\infty x^{4n - 2} = \sum_{k=0}^\infty x^{4k + 2}\) (letting k = n - 1), which is a geometric series with ratio \(x^4\), so sum is \(x^2/(1 - x^4)\). Then integrating that gives the result we found.
+
+Yes, this seems correct. The answer should be option I.
+</think>
+
+To find the sum of the series  
+$$
+\sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1},
+$$  
+we begin by analyzing its derivative. Let us define:
+
+$$
+S(x) = \sum_{n=1}^\infty \frac{x^{4n - 1}}{4n - 1}.
+$$
+
+Differentiating term-by-term with respect to $x$, we get:
+
+$$
+S'(x) = \sum_{n=1}^\infty x^{4n - 2} = x^2 + x^6 + x^{10} + \cdots,
+$$
+
+which is a geometric series with first term $a = x^2$ and common ratio $r = x^4$. The sum of this infinite geometric series (for $|x| < 1$) is:
+
+$$
+S'(x) = \frac{x^2}{1 - x^4}.
+$$
+
+Now, to find $S(x)$, we integrate $S'(x)$:
+
+$$
+S(x) = \int \frac{x^2}{1 - x^4} \, dx.
+$$
+
+---
+
+### Step 1: Partial Fraction Decomposition
+
+We decompose:
+
+$$
+\frac{x^2}{1 - x^4} = \frac{x^2}{(1 - x^2)(1 + x^2)}.
+$$
+
+Using partial fractions, we find:
+
+$$
+\frac{x^2}{1 - x^4} = \frac{1}{4(1 - x)} + \frac{1}{4(1 + x)} - \frac{1}{2(1 + x^2)}.
+$$
+
+---
+
+### Step 2: Integrate Term-by-Term
+
+Now integrate each term:
+
+- $\int \frac{1}{1 - x} \, dx = -\ln|1 - x|$,
+- $\int \frac{1}{1 + x} \, dx = \ln|1 + x|$,
+- $\int \frac{1}{1 + x^2} \, dx = \arctan x$.
+
+So,
+
+$$
+S(x) = \frac{1}{4}(-\ln|1 - x|) + \frac{1}{4}(\ln|1 + x|) - \frac{1}{2} \arctan x + C.
+$$
+
+Simplify the logarithmic terms:
+
+$$
+S(x) = \frac{1}{4} \ln\left| \frac{1 + x}{1 - x} \right| - \frac{1}{2} \arctan x + C.
+$$
+
+Since $S(0) = 0$, we set $C = 0$.
+
+Note that $\left| \frac{1 + x}{1 - x} \right| = \left| \frac{x + 1}{x - 1} \right|$ because $|1 - x| = |x - 1|$, so:
+
+$$
+S(x) = \frac{1}{4} \ln\left( \frac{|x + 1|}{|x - 1|} \right) - \frac{1}{2} \arctan x.
+$$
+
+---
+
+### Step 3: Match with Answer Choices
+
+The expression matches **option I**:
+
+$$
+\frac{1}{4} \ln\left( \frac{|x + 1|}{|x - 1|} \right) - \frac{1}{2} \arctan x.
+$$
+
+This is the correct answer.
+
+---
+
+### Final Answer
+
+$$
+\boxed{I}
+$$"
+761,"Okay, let's try to figure out this problem. The question says: ""The current value f(n) is five times the previous value, plus four. Find a recursive definition for f(n)."" Hmm, recursive definition usually means expressing f(n) in terms of f(n-1), right?
+
+So, the problem states that the current value f(n) is five times the previous value plus four. Let's parse that. ""Previous value"" would be f(n-1), right? Because in recursive sequences, the previous term is the one before the current one. So if we're talking about f(n), the previous term is f(n-1).
+
+So, ""five times the previous value"" would be 5 * f(n-1). Then ""plus four"" is +4. So putting that together, f(n) should be 5 times f(n-1) plus 4. Let me check if that makes sense.
+
+Let's think of an example. Suppose the previous value is, say, 2. Then the current value would be 5*2 + 4 = 10 + 4 = 14. If the previous value was 14, the next one would be 5*14 + 4 = 70 + 4 = 74. That seems to fit the description: each term is five times the one before it plus four.
+
+Wait, the problem says ""the current value f(n) is five times the previous value, plus four."" So yes, that translates directly to f(n) = 5*f(n-1) + 4. I don't think there's anything else here. The problem is asking for a recursive definition, so the base case might be needed, but the question specifically says ""Enter f_{n-1} as f(n-1). f(n)=[ANS]"". So they just want the recursive formula for f(n) in terms of f(n-1), which is f(n) = 5*f(n-1) + 4.
+
+Let me make sure there's no trick here. Sometimes recursive definitions have initial conditions, but the problem says ""Find a recursive definition for f(n)"" and they want f(n) expressed as [ANS]. Since they specified to enter f(n-1) as f(n-1), the answer is probably 5*f(n-1) + 4. Let me write that in the required format.
+
+The problem says ""Enter f_{n-1} as f(n-1)"". So they want it written with f(n-1), not f_{n-1}. So the answer is 5*f(n-1) + 4. Let me check if they want it in a specific notation. Maybe using parentheses? Like 5*(f(n-1)) + 4? But in most recursive definitions, it's written without parentheses if it's clear, but sometimes they use parentheses. Wait, the problem says ""f(n)=[ANS]"", so we need to write the expression that equals f(n).
+
+Yes, the standard recursive formula here is f(n) = 5*f(n-1) + 4. So the answer should be 5*f(n-1) + 4. Let me confirm with the problem statement again: ""The current value f(n) is five times the previous value, plus four."" So current = 5*previous + 4. Previous is f(n-1), so f(n) = 5*f(n-1) + 4. That's it.
+
+I think that's straightforward. No tricks here. The key is recognizing that ""previous value"" is f(n-1), so the recursion is f(n) = 5*f(n-1) + 4.
+</think>
+
+[ANS]5*f(n-1)+4
+
+\boxed{5*f(n-1)+4}"
+762,"Okay, let's see. I need to simplify the expression (8x)(7x) + (6x)(8x) + 7(6x) + x(6x). Hmm, first, I should probably expand each term and then combine like terms. Let me take it step by step.
+
+First term: (8x)(7x). When you multiply two variables with the same base, you add the exponents. So x times x is x squared. 8 times 7 is 56. So that term becomes 56x².
+
+Second term: (6x)(8x). Similarly, 6 times 8 is 48, and x times x is x², so that's 48x².
+
+Third term: 7(6x). That's just 42x, because 7 times 6 is 42, and there's no x squared here.
+
+Fourth term: x(6x). That's 6x², because x times x is x², and 1 times 6 is 6.
+
+Now let's write all the expanded terms together: 56x² + 48x² + 42x + 6x².
+
+Now, let's combine like terms. The x² terms: 56x² + 48x² + 6x². Let's add those up. 56 + 48 is 104, plus 6 is 110. So that's 110x².
+
+Then the x term is just 42x.
+
+So putting it all together, the simplified expression is 110x² + 42x.
+
+Wait, let me check again to make sure I didn't make a mistake. Let's verify each term:
+
+First term: 8x * 7x = 56x². Correct.
+
+Second term: 6x * 8x = 48x². Correct.
+
+Third term: 7 * 6x = 42x. Correct.
+
+Fourth term: x * 6x = 6x². Correct.
+
+Adding the x² terms: 56 + 48 + 6 = 110. So 110x². The x term is 42x. So the simplified form is 110x² + 42x. I don't think there's any further simplification because there are no like terms left. So that's the answer.
+</think>
+
+[ANS]110x² + 42x
+
+\boxed{110x² + 42x}"
+763,"Okay, let's see. The problem asks for numerical expressions for two verbal phrases.
+
+First phrase: ""nine added to four"". Hmm, ""added to"" means we take the second number and add the first? Wait, no. Wait, ""nine added to four"" – so it's four plus nine? Because when you say ""A added to B"", it's B + A. Like, ""two added to three"" is 3 + 2 = 5. So yeah, ""nine added to four"" would be 4 + 9. Let me confirm. If it was ""four added to nine"", that would be 4 + 9 as well? Wait, no. Wait, maybe not. Wait, in some contexts, ""added to"" might be ordered differently. Let's think. For example, ""five added to three"" is three plus five. So the structure is: [first number] added to [second number] = second + first. Wait, no, maybe not. Wait, actually, in math terms, ""A added to B"" is B + A. Let me check with an example. Suppose someone says ""ten added to five"". That would be 5 + 10 = 15. So yes, the order is the second number first, then the first. Wait, no, maybe it's the other way around. Wait, maybe ""nine added to four"" is 4 + 9. Let's parse the sentence. ""Nine added to four"" – the phrase ""added to"" indicates that the first part is the thing being added to the second. Wait, no. Wait, in English, when you say ""X added to Y"", it's Y + X. For example, ""Add two to three"" is 3 + 2. So ""nine added to four"" would be 4 + 9. So the numerical expression is 4 + 9.
+
+Second phrase: ""eight divided by three"". That's straightforward. Divided by means division, so 8 divided by 3 is 8 / 3.
+
+Wait, the problem says ""Write a numerical expression for each verbal phrase."" So they want the expression written with numbers and operations, not evaluated. So first one is 4 + 9, second is 8 / 3.
+
+Wait, but the problem says ""nine added to four"" – so in numerical expression, it's 4 + 9. Let me make sure. Let's think of another example. If it was ""four added to nine"", that would be 4 + 9. But ""nine added to four"" is the same as four plus nine? Hmm. Wait, maybe the order matters here. Wait, addition is commutative, so 4 + 9 is the same as 9 + 4. But the problem says ""numerical expression"", so they might want it written in the order of the phrase. Wait, the phrase says ""nine added to four"". So the structure is [nine] added to [four]. So in math terms, ""added to"" usually indicates that the second number is the base. Like, if you say ""add five to three"", it's three plus five. So ""nine added to four"" would be four plus nine. So the expression is 4 + 9.
+
+Similarly, ""eight divided by three"" is 8 ÷ 3, which is written as 8/3.
+
+Wait, the problem says ""numerical expression"". So for the first one, it's 4 + 9, and the second is 8 / 3.
+
+Wait, but the problem says ""Write a numerical expression for each verbal phrase."" So each phrase has its own [ANS]. The problem lists:
+
+nine added to four [ANS]
+
+eight divided by three [ANS]
+
+So two answers. The user wants one answer per [ANS] in order, boxed. So first answer is 4 + 9, second is 8 / 3.
+
+But wait, in numerical expressions, do we write them with operators or as fractions? The problem says ""numerical expression"", so probably using standard notation. For the second one, ""eight divided by three"" is 8 divided by 3, which is 8/3 or 8 ÷ 3. Since it's a numerical expression, 8/3 is acceptable.
+
+But the problem says ""numerical expression"", so they might want it written with numbers and operations. So first answer: 4 + 9. Second answer: 8 / 3.
+
+Wait, but the problem says ""Write a numerical expression for each verbal phrase."" So the first one is ""nine added to four"" → 4 + 9. The second is ""eight divided by three"" → 8 ÷ 3.
+
+Wait, but the problem might expect them written in a specific way. Let me check.
+
+In some contexts, ""added to"" might be written as the second number first. For example, ""four plus nine"" is 4 + 9. So ""nine added to four"" would be 4 + 9.
+
+Yes, that seems right. So first answer: 4 + 9. Second answer: 8 / 3.
+
+But the problem says ""numerical expression"", so they might want it without spaces, like 4+9 and 8/3.
+
+The user says ""Put only the value in the box: no 'x =', no units, no prose."" Wait, but these are expressions, not values. Wait, wait, the problem says ""Write a numerical expression for each verbal phrase."" So the answer is the expression, not the evaluated value.
+
+Wait, the user's instruction says: ""If the question has a final answer, please place the answer in \boxed{}."" But in this case, the problem is asking for numerical expressions, so the answers are expressions.
+
+Wait, but the user says: ""Please give one answer per [ANS] in the order they appear, all inside a single \boxed{} separated by commas.""
+
+So first [ANS] is for ""nine added to four"", second is for ""eight divided by three"".
+
+So the first answer is 4 + 9, written as 4+9, and the second is 8/3.
+
+But the problem says ""numerical expression"", so they might want it in a specific format. Let me think.
+
+In math problems like this, usually, ""nine added to four"" is written as 4 + 9. Similarly, ""eight divided by three"" is 8 ÷ 3 or 8/3.
+
+But the problem says ""numerical expression"", so probably 4+9 and 8/3.
+
+Wait, but in some contexts, the division might be written with a slash. Let's see.
+
+The user says: ""no 'x =', no units, no prose"". So we need to write the expression as a string of numbers and operators.
+
+For the first one: ""nine added to four"" → 4 + 9. So the expression is 4+9.
+
+Second: ""eight divided by three"" → 8/3.
+
+So the answers are 4+9 and 8/3.
+
+But wait, the problem says ""numerical expression"". So maybe they want it written without the plus sign? No, numerical expressions include operators.
+
+Wait, the problem says ""Write a numerical expression for each verbal phrase."" So the answer is the expression.
+
+So first answer: 4 + 9 → written as 4+9
+
+Second answer: 8 divided by 3 → 8/3
+
+So the boxed answer should be \boxed{4+9, 8/3}
+
+But the user says ""Put only the value in the box: no 'x =', no units, no prose.""
+
+Wait, but these are expressions, not values. Hmm. Wait, maybe the problem is from a source where ""numerical expression"" here means the evaluated value? Wait, but the problem says ""Write a numerical expression for each verbal phrase"", not ""evaluate"".
+
+Wait, the problem says: ""Write a numerical expression for each verbal phrase."" So the answer is the expression, not the result. So for example, ""nine added to four"" is 4 + 9.
+
+But the user's instruction says: ""If the question has a final answer, please place the answer in \boxed{}.""
+
+Hmm. Wait, perhaps the user made a mistake here, but according to the problem statement, it's asking for expressions.
+
+Wait, let's check again. The problem says: ""nine added to four [ANS]"". So they want the expression written in the [ANS] box.
+
+So the first answer is 4 + 9, second is 8 / 3.
+
+But in the required format, the user says: ""Give one answer per [ANS] in the order they appear, all inside a single \boxed{} separated by commas"".
+
+So it should be \boxed{4+9, 8/3}
+
+But the user says ""no 'x =', no units, no prose"". So that's okay.
+
+Wait, but maybe they want it without the plus sign? Like, in some contexts, but no, the expression needs the operator.
+
+Alternatively, maybe the problem expects the answers to be written as numbers with operations. Let's see.
+
+Another way: In some textbooks, ""nine added to four"" is written as 9 + 4. Wait, this is a point of confusion.
+
+Wait, in English, when you say ""A added to B"", it's B + A. For example, ""Add 2 to 3"" is 3 + 2. So ""nine added to four"" would be 4 + 9.
+
+But in some contexts, people might interpret it as 9 + 4. Let me verify.
+
+Suppose the phrase was ""four added to nine"" – that would be 4 + 9. So the order of the numbers in the phrase is the order of the addition.
+
+Wait, ""nine added to four"" – the verb phrase is ""added to"", which takes the object (nine) and the target (four). So it's like ""nine [is] added to four"", meaning four is the base, nine is added to it. So yes, 4 + 9.
+
+For example, if you say ""I added five to my score"", it means my score + five. So ""nine added to four"" would be four + nine.
+
+Yes, so 4 + 9 is correct.
+
+Similarly, ""eight divided by three"" is 8 / 3.
+
+So the two answers are 4+9 and 8/3.
+
+But the user wants them in a single boxed, separated by commas.
+
+Wait, the problem says ""Write a numerical expression for each verbal phrase."" So the answer is two expressions.
+
+So the final answer should be \boxed{4+9, 8/3}
+
+But the user says ""Put only the value in the box: no 'x =', no units, no prose.""
+
+Wait, but these are expressions, not values. But according to the problem statement, the user wants the numerical expressions.
+
+I think that's the answer.
+</think>
+
+[ANS]4+9[ANS]8/3[ANS]
+
+\boxed{4+9, 8/3}"
+764,"Okay, let's see. I need to rewrite the expression ln(a + b) + 4 ln(a - b) - 5 ln c as a single logarithm ln A, and then find A. Hmm, logarithm properties. Let me recall. 
+
+First, I remember that n ln x is the same as ln(x^n). So, for the terms with coefficients, I can use that property. Then, when you add logarithms, it's the logarithm of the product, and when you subtract, it's the logarithm of the quotient. 
+
+Let me break it down step by step. 
+
+Starting with the original expression: ln(a + b) + 4 ln(a - b) - 5 ln c.
+
+First, handle the 4 ln(a - b). Using the power rule, 4 ln(a - b) = ln[(a - b)^4]. 
+
+Then, the -5 ln c. Similarly, -5 ln c = ln[c^(-5)] or ln(1/c^5), but maybe it's better to write it as ln(1/(c^5)) but let's see. 
+
+So now the expression becomes: ln(a + b) + ln[(a - b)^4] - ln c^5.
+
+Wait, because -5 ln c is ln(c^(-5)), right? Because ln(x^n) = n ln x, so n ln x = ln(x^n), so -5 ln c = ln(c^(-5)) = ln(1/c^5). 
+
+But when you have ln A + ln B - ln C, that's ln(A*B / C). Because ln A + ln B = ln(AB), and then minus ln C is ln(AB) - ln C = ln(AB / C). 
+
+So let's apply that. 
+
+So the expression is ln(a + b) + ln[(a - b)^4] - ln(c^5). 
+
+Combine the first two logs: ln[(a + b) * (a - b)^4]. Then subtract the third log: that's ln[ ( (a + b)(a - b)^4 ) / c^5 ].
+
+So that should be ln A, so A is [ (a + b)(a - b)^4 ] / c^5.
+
+Let me check if that's correct. Let's verify each step.
+
+Original: ln(a + b) + 4 ln(a - b) - 5 ln c.
+
+First term: ln(a + b).
+
+Second term: 4 ln(a - b) = ln[(a - b)^4].
+
+Third term: -5 ln c = ln(c^(-5)).
+
+So adding them up: ln(a + b) + ln[(a - b)^4] + ln(c^(-5)).
+
+Wait, no: it's ln(a + b) + ln[(a - b)^4] - ln(c^5) because -5 ln c is ln(c^(-5)) which is the same as -ln(c^5). Wait, maybe another way: -5 ln c = -ln(c^5), so the entire expression is ln(a + b) + ln[(a - b)^4] - ln(c^5).
+
+Then, using log addition: ln X + ln Y = ln(XY), and ln X - ln Y = ln(X/Y). So here, it's ln[(a + b) * (a - b)^4] - ln(c^5) = ln[ ( (a + b)(a - b)^4 ) / c^5 ].
+
+Yes, that's right. So A is (a + b)(a - b)^4 divided by c^5.
+
+Let me make sure there are no mistakes. Let's expand (a - b)^4 to see if that's necessary, but the problem says ""as a single logarithm ln A"", so A is the argument, which is the product over the quotient as above.
+
+So A = [ (a + b)(a - b)^4 ] / c^5.
+
+I think that's it. Let me check with numbers to verify. Let's pick a=2, b=1, c=1.
+
+Original expression: ln(2+1) + 4 ln(2-1) -5 ln(1) = ln(3) + 4 ln(1) -5 ln(1) = ln(3) + 0 - 0 = ln(3).
+
+Now, A should be ( (2+1)(2-1)^4 ) / 1^5 = (3 * 1) / 1 = 3. So ln A = ln(3), which matches. Good.
+
+Another test: a=3, b=1, c=2.
+
+Original: ln(4) + 4 ln(2) -5 ln(2) = ln(4) + (4 -5) ln(2) = ln(4) - ln(2) = ln(4/2) = ln(2).
+
+A = ( (3+1)(3-1)^4 ) / 2^5 = (4 * 16) / 32 = 64 / 32 = 2. So ln A = ln(2), which matches. Perfect.
+
+So that works. So A is (a + b)(a - b)^4 divided by c^5.
+
+So the answer is A = \frac{(a + b)(a - b)^4}{c^5}.
+
+The problem says ""the function A=[ANS]"". So they just want the expression for A, which is that fraction.
+
+So the answer is (a + b)(a - b)^4 / c^5.
+
+I think that's it. Let me write it in a simplified form, but probably they just want it as (a + b)(a - b)^4 over c^5.
+
+Yes, that's the single logarithm argument.
+</think>
+
+[ANS]\boxed{\dfrac{(a + b)(a - b)^4}{c^5}}"
+765,"Okay, let's try to figure out this problem step by step. So, we have two classes: Mr. Cleary's with 14 kids and Ms. Ntuala's with 12 kids. Total students: 14 + 12 = 26. There are 20 computers available, but two don't work, so 18 working computers. Each computer can have at most 2 students. The question is asking for the maximum number of students who can have a computer to themselves. Hmm, ""to themselves"" probably means solo students, right? Like, a computer with only one student using it.
+
+Wait, let me re-read the problem: ""the maximum number of students who can have a computer to themselves"". So, we want as many students as possible to be alone on a computer. But we have constraints: total students 26, 18 working computers (since 20 total minus 2 broken = 18 working). Each computer can have 1 or 2 students. Wait, no: ""there can only be 2 students on a computer at most"", so each computer can have 1 or 2 students. So the total number of student-computer assignments is equal to the number of students (since each student uses a computer), but each computer can have up to 2 students.
+
+Wait, but the problem says ""every student must use a computer"". So all 26 students must be assigned to computers. But there are only 18 working computers. Wait, hold on: 18 working computers, each can have up to 2 students. So maximum students that can be accommodated is 18*2=36. But we have only 26 students, so that's more than enough. Wait, but the problem states ""every student must use a computer"", so all 26 students need to be assigned to the 18 working computers.
+
+But the problem is asking for the maximum number of students who can have a computer to themselves. So, we want as many students as possible to be alone on a computer (i.e., 1 student per computer), and the rest would be in pairs (2 students per computer). Since we want to maximize the number of solo students, we need to minimize the number of computers that have two students.
+
+Wait, but each computer can have 1 or 2 students. Let's denote:
+
+Let x = number of computers with 1 student (solo)
+
+Let y = number of computers with 2 students (pairs)
+
+We know that x + y = total number of computers used. Since we have 18 working computers, we can use up to 18 computers. But we need to accommodate all 26 students.
+
+Total students: 1*x + 2*y = 26
+
+Total computers used: x + y ≤ 18 (since we have 18 working computers)
+
+We want to maximize x.
+
+So, from the equations:
+
+x + 2y = 26
+
+x + y ≤ 18
+
+Let's solve for x. From the first equation: x = 26 - 2y
+
+Substitute into the second inequality:
+
+(26 - 2y) + y ≤ 18
+
+26 - y ≤ 18
+
+-y ≤ -8
+
+y ≥ 8
+
+So y must be at least 8. Then x = 26 - 2y. To maximize x, we need to minimize y. The minimal y is 8, so x = 26 - 2*8 = 26 - 16 = 10.
+
+Wait, so x is 10. Let me check:
+
+If y=8, then x=10. Total computers used: 10+8=18, which is exactly the number of working computers. So that works. So 10 solo students.
+
+But wait, the problem says ""the maximum number of students who can have a computer to themselves"". So the answer would be 10? Let's check the answer choices: A is 10. Hmm.
+
+Wait, but wait a second. The problem says ""there are 20 computers available, two of which do not work"". So 18 working. So we have 18 computers that can be used. Each computer can have up to 2 students. We need to assign all 26 students to these 18 computers.
+
+If we have x solo students, then the number of students in pairs is 26 - x. Each pair uses one computer, so the number of computers used for pairs is (26 - x)/2. The total computers used is x + (26 - x)/2. This must be ≤ 18.
+
+Let me write that:
+
+x + (26 - x)/2 ≤ 18
+
+Multiply both sides by 2:
+
+2x + 26 - x ≤ 36
+
+x + 26 ≤ 36
+
+x ≤ 10
+
+Ah, so maximum x is 10. So that's the same as before.
+
+So the answer should be A. 10.
+
+Wait, but let me make sure. Let's think of it another way. To maximize the number of solo students, we want as many computers as possible to have only one student. Since each pair uses one computer for two students, having a pair reduces the number of solo students by 2 (because instead of two solo students on two computers, we have one computer with two students). Wait, no: if we have a pair, we save one computer (since two students would need two computers as solo, but as a pair they need one). So each pair reduces the total number of computers needed by 1.
+
+Total students: 26. If all were solo, we'd need 26 computers, but we only have 18. So we have 26 - 18 = 8 ""excess"" students that need to be paired. Wait, that might be another way.
+
+Wait, the difference between the number of students and the number of computers is the number of pairs we need. Wait, maybe.
+
+Each pair allows us to have two students per computer, so each pair reduces the number of computers needed by 1. So total computers needed = number of students - number of pairs.
+
+Wait, if we have p pairs, then total students = 2p + s, where s is solo students.
+
+Total computers used = p + s.
+
+But we have s + p ≤ 18 (since 18 computers available)
+
+And s + 2p = 26.
+
+So s = 26 - 2p
+
+Then (26 - 2p) + p ≤ 18 → 26 - p ≤ 18 → p ≥ 8.
+
+So p is at least 8. Then s = 26 - 2*8 = 10. So s=10. So maximum solo students is 10.
+
+Yes, that seems correct.
+
+So answer is A. 10.
+
+Wait, but let me check the answer choices again. The choices are A.10, B.24, C.18, D.20, E.8, F.6, G.2, H.12, I.16, J.14.
+
+So A is 10. So boxed A.
+
+Wait, but the problem says ""the maximum number of students who can have a computer to themselves"". So if we have 10 solo students, that's 10 students with their own computer. The rest 16 students are in 8 pairs (since 16/2=8). Total computers: 10 + 8 = 18, which is exactly the number of working computers. So that works.
+
+Is there a way to have more than 10? Suppose someone claims 12. Let's see: if x=12, then 26 - 12 = 14 students in pairs. 14 / 2 =7 pairs. Total computers: 12 +7=19. But we only have 18 computers. So 19 >18, which is not possible. So 12 is too much.
+
+Similarly, x=11: 26-11=15 students in pairs. 15/2=7.5, which is not possible (can't have half a pair). So 15 students would need 8 computers (7 pairs and 1 solo, but wait, no: 15 students as pairs would be 7 pairs (14 students) and 1 left, which would be a solo. Wait, but in this case, if x=11, then total students = x + 2y =11 + 2y=26 → 2y=15 → y=7.5, which is impossible. So x must be even? Wait, no. Wait, x + 2y =26, so x must be even? Wait 26 is even, so x must be even? Wait 2y is even, so x =26 - even = even. So x must be even. Wait, 26 is even, 2y is even, so x is even.
+
+Wait, so x has to be even. So 10 is even, 12 is even. But x=12 would require y=7 (since 26-12=14, 14/2=7), so total computers=12+7=19, which is over 18. So x=12 is impossible.
+
+x=10: 10+8=18 computers. Perfect.
+
+x=8: 8 + (26-8)/2 =8 +9=17 computers. Which is under 18, but we want maximum x, so 10 is higher.
+
+So yes, 10 is the maximum.
+
+Therefore, the answer is A.
+</think>
+
+To determine the **maximum number of students who can have a computer to themselves**, we analyze the constraints and conditions given:
+
+---
+
+### **Key Information**
+
+- Total students:  
+  - Mr. Cleary's class: 14  
+  - Ms. Ntuala's class: 12  
+  - **Total = 26 students**
+
+- Total computers available: 20  
+- Broken computers: 2  
+- **Working computers = 18**
+
+- Each computer can accommodate **at most 2 students** (i.e., 1 or 2 students per computer)
+
+- Every student **must use a computer**
+
+- We are to find the **maximum number of students who can have a computer to themselves** (i.e., **solo users**)
+
+---
+
+### **Step-by-Step Reasoning**
+
+Let:
+- $ x $ = number of **solo students** (1 student per computer)
+- $ y $ = number of **pairs** (2 students per computer)
+
+From the problem:
+- Total students: $ x + 2y = 26 $
+- Total computers used: $ x + y \leq 18 $
+
+We want to **maximize $ x $**.
+
+#### Solve for $ x $ in terms of $ y $:
+
+From the first equation:
+$$
+x = 26 - 2y
+$$
+
+Substitute into the second inequality:
+$$
+(26 - 2y) + y \leq 18 \\
+26 - y \leq 18 \\
+y \geq 8
+$$
+
+So the **minimum value of $ y $** is 8.
+
+Now plug back into the equation for $ x $:
+$$
+x = 26 - 2(8) = 26 - 16 = 10
+$$
+
+Thus, the **maximum number of solo students** is **10**.
+
+Check if this configuration works:
+- $ x = 10 $
+- $ y = 8 $
+- Total computers used: $ 10 + 8 = 18 $ ✅
+- Total students: $ 10 + 2 \times 8 = 26 $ ✅
+
+This satisfies all constraints.
+
+---
+
+### **Why Not More Than 10?**
+
+Try $ x = 12 $:
+- Then $ 2y = 26 - 12 = 14 \Rightarrow y = 7 $
+- Total computers: $ 12 + 7 = 19 $ ❌ (more than 18 available)
+
+Try $ x = 11 $:
+- $ 2y = 15 \Rightarrow y = 7.5 $ ❌ (not an integer)
+
+So **10 is the maximum possible** number of students who can have a computer to themselves.
+
+---
+
+### **Final Answer**
+
+$$
+\boxed{A}
+$$"
+766,"Okay, let's tackle these mixed fractions to decimals. I need to convert each one to a decimal with at least four decimal places. Let's start with the first one: 4 and 3/8.
+
+First, I remember that a mixed number is a whole number plus a fraction. So 4 3/8 is 4 + 3/8. To convert 3/8 to a decimal, I can divide 3 by 8. Let me do that division. 8 goes into 3 zero times. Add a decimal point and a zero: 30 divided by 8 is 3 (since 8*3=24), remainder 6. Bring down another zero: 60 divided by 8 is 7 (8*7=56), remainder 4. Bring down another zero: 40 divided by 8 is 5. So 3/8 is 0.375. So 4 3/8 is 4.375. But wait, the problem says at least four decimal places. Hmm, 0.375 is three decimal places. So maybe they want it written with four? Like 4.3750? Let me check. 3 divided by 8 is exactly 0.375, so it terminates at three decimal places. So if they want four, it's 4.3750. But maybe they just want it to four decimal places, so 4.3750. Let me confirm. 8*0.375 = 3, so yes, 3/8 is 0.375. So 4.375 is the decimal, and to have four decimal places, it's 4.3750.
+
+Next one: 7 2/6. Let's see. First, simplify 2/6 to 1/3. Because 2 divided by 2 is 1, 6 divided by 2 is 3. So 7 1/3. Now, 1/3 as a decimal is a repeating decimal: 0.3333... So 7 + 0.3333... is 7.3333... So to four decimal places, it's 7.3333 (since it's repeating, we can write four 3s). Let me verify: 1/3 is approximately 0.333333..., so 7.3333 when rounded to four decimal places. Wait, but the problem says ""using at least four decimal places"". So we need to write it with four decimal places, which would be 7.3333 (since the fifth decimal is 3, so it's 7.3333).
+
+Third one: 11 3/7. Let's convert 3/7 to a decimal. 7 goes into 3 zero. 30 divided by 7 is 4 (7*4=28), remainder 2. Bring down 0: 20 divided by 7 is 2 (7*2=14), remainder 6. Bring down 0: 60 divided by 7 is 8 (7*8=56), remainder 4. Bring down 0: 40 divided by 7 is 5 (7*5=35), remainder 5. Bring down 0: 50 divided by 7 is 7 (7*7=49), remainder 1. Bring down 0: 10 divided by 7 is 1 (7*1=7), remainder 3. Now we see the remainder is 3, which was the original numerator, so it starts repeating. So 3/7 is approximately 0.428571428571... So let's write that out: 0.4285714285... So to four decimal places, it's 0.4286? Wait, let's check. The fourth decimal place: let's count. 3 divided by 7:
+
+3.000000000...
+
+7 into 30 is 4 (28), remainder 2 → 0.4
+
+7 into 20 is 2 (14), remainder 6 → 0.42
+
+7 into 60 is 8 (56), remainder 4 → 0.428
+
+7 into 40 is 5 (35), remainder 5 → 0.4285
+
+7 into 50 is 7 (49), remainder 1 → 0.42857
+
+7 into 10 is 1 (7), remainder 3 → 0.428571...
+
+So the decimal is 0.428571428571... So to four decimal places, we look at the fifth decimal to round. The first four decimals are 4 (tenths), 2 (hundredths), 8 (thousandths), 5 (ten-thousandths). The fifth decimal is 7, which is more than 5, so we round up the fourth decimal. So 0.4285 becomes 0.4286. Wait, let's see:
+
+Wait, let's list the decimals step by step:
+
+3 ÷ 7 = 0.428571428571...
+
+So positions:
+
+1st decimal: 4
+
+2nd: 2
+
+3rd: 8
+
+4th: 5
+
+5th: 7
+
+6th: 1
+
+So to four decimal places, we need to round to the fourth decimal. The fourth is 5, and the fifth is 7, which is ≥5, so we round up the fourth decimal. 5 + 1 = 6. So 0.4286. Therefore, 11 3/7 is 11.4286.
+
+Wait, let me confirm with a calculator. Let's see, 3 divided by 7 is approximately 0.42857142857. So 11 + 0.42857142857 = 11.42857142857. So to four decimal places, it's 11.4286 because the fifth decimal is 7, so we round up the fourth decimal (5) to 6.
+
+Let me check each one again.
+
+First: 4 3/8. 3/8 = 0.375. So 4.375. To four decimal places, it's 4.3750. Because 0.375 is 0.3750 when written with four decimals.
+
+Second: 7 2/6. Simplify 2/6 to 1/3. 1/3 is 0.333333..., so 7.333333... So to four decimal places, 7.3333 (since the fifth decimal is 3, which is less than 5, so we don't round up; wait, no: the fourth decimal is 3, and the fifth is 3, so it's 7.3333 when rounded to four decimals. Wait, 0.333333... to four decimals is 0.3333, because the fifth is 3, so we just take four 3s.
+
+Third: 11 3/7. As above, 11.42857142857..., so to four decimals, 11.4286.
+
+Let me verify with actual division.
+
+For 3/8: 8 into 3.0000. 8*0.3=2.4, 3.0-2.4=0.6. 0.6*10=6.0. 8*0.07=0.56, 6.0-5.6=0.4. 0.4*10=4.0. 8*0.005=0.04, 4.0-4.0=0. So 0.375. So 4.375, which is 4.3750 when written to four decimals.
+
+For 2/6: 2 divided by 6 is 0.333333... So 7 + 0.333333... = 7.333333..., so to four decimals, 7.3333.
+
+For 3/7: Let's do the division step by step.
+
+3 ÷ 7:
+
+7 into 3.000000
+
+7*0.4=2.8, subtract from 3.0: 0.2
+
+Bring down 0: 2.0
+
+7*0.02=0.14, subtract: 2.0 - 1.4 = 0.6
+
+Bring down 0: 6.0
+
+7*0.008=0.056, subtract: 6.0 - 5.6 = 0.4
+
+Bring down 0: 4.0
+
+7*0.0005=0.0035, subtract: 4.0 - 3.5 = 0.5
+
+Bring down 0: 5.0
+
+7*0.00007=0.00049, subtract: 5.0 - 4.9 = 0.1
+
+Bring down 0: 1.0
+
+7*0.00001=0.00007, subtract: 1.0 - 0.7 = 0.3
+
+Now we have 0.428571...
+
+So the decimal is 0.428571428571..., so the first four decimals after the decimal are 4, 2, 8, 5. The fifth is 7, so when rounding to four decimal places, we look at the fifth (7) which is ≥5, so we round up the fourth decimal (5) to 6. So 0.4286. Therefore, 11.4286.
+
+So the answers are:
+
+4 3/8 = 4.3750
+
+7 2/6 = 7.3333
+
+11 3/7 = 11.4286
+
+Wait, but the problem says ""using at least four decimal places"". So for 4.375, which is three decimals, we need to write it as 4.3750 to have four. For 7.3333..., it's already four decimals (since it's repeating, but we can write four 3s). For 11.428571..., we round to four decimals as 11.4286.
+
+Let me check if the problem says ""at least four"", so for the first one, 4.375 is three, so we need to add a zero to make four. So 4.3750.
+
+Yes, that's correct. For example, 0.375 is 0.3750 when written with four decimal places.
+
+So the answers are:
+
+First: 4.3750
+
+Second: 7.3333
+
+Third: 11.4286
+
+Let me confirm with a calculator.
+
+4 3/8: 3 divided by 8 is 0.375, so 4.375. To four decimals: 4.3750.
+
+7 2/6: 2/6 is 1/3 ≈ 0.3333333333, so 7.3333333333. To four decimals: 7.3333.
+
+11 3/7: 3/7 ≈ 0.4285714286, so 11.4285714286. To four decimals: 11.4286 (since the fifth decimal is 7, round up the fourth decimal 5 to 6).
+
+Yes, that's right.
+
+So the three answers are 4.3750, 7.3333, 11.4286.
+
+The problem says ""Convert each mixed fraction to a decimal using at least four decimal places."" So each answer should have four decimal places.
+
+So the first one is 4.3750, second 7.3333, third 11.4286.
+
+I think that's it.
+</think>
+
+[ANS]4.3750,[ANS]7.3333,[ANS]11.4286
+
+\boxed{4.3750,7.3333,11.4286}"
+767,"Okay, let's try to solve this integral: ∫ dx / ∛[(x - 1)(x + 1)²]. Hmm, first, maybe I should simplify the expression under the cube root. Let's see, (x - 1)(x + 1)² = (x² - 1)(x + 1) = x³ + x² - x - 1. Wait, maybe a substitution would help here. Let me think about rational functions under cube roots. Often, for integrals involving ∛[(x - a)(x - b)²], a substitution like t = ∛[(x + 1)/(x - 1)] might be useful because it can turn the product into a simpler form.
+
+Let me set t = ∛[(x + 1)/(x - 1)]. Then t³ = (x + 1)/(x - 1). Let's solve for x in terms of t. Multiply both sides by (x - 1): t³(x - 1) = x + 1 ⇒ t³x - t³ = x + 1 ⇒ t³x - x = t³ + 1 ⇒ x(t³ - 1) = t³ + 1 ⇒ x = (t³ + 1)/(t³ - 1). Okay, that's a good substitution. Now, let's compute dx/dt.
+
+First, x = (t³ + 1)/(t³ - 1). Then dx/dt = [3t²(t³ - 1) - 3t²(t³ + 1)] / (t³ - 1)² = [3t²(t³ - 1 - t³ - 1)] / (t³ - 1)² = [3t²(-2)] / (t³ - 1)² = -6t² / (t³ - 1)². So dx = -6t² / (t³ - 1)² dt.
+
+Now, the original integral is ∫ dx / ∛[(x - 1)(x + 1)²]. Let's express the denominator in terms of t. First, (x - 1) = [(t³ + 1)/(t³ - 1)] - 1 = [t³ + 1 - t³ + 1]/(t³ - 1) = 2/(t³ - 1). (x + 1) = [(t³ + 1)/(t³ - 1)] + 1 = [t³ + 1 + t³ - 1]/(t³ - 1) = 2t³/(t³ - 1). Therefore, (x - 1)(x + 1)² = [2/(t³ - 1)] * [2t³/(t³ - 1)]² = [2/(t³ - 1)] * [4t⁶/(t³ - 1)²] = 8t⁶ / (t³ - 1)³. So the cube root of that is ∛[8t⁶ / (t³ - 1)³] = 2t² / (t³ - 1). Because ∛8 = 2, ∛t⁶ = t², ∛(t³ - 1)³ = t³ - 1.
+
+Therefore, the integrand becomes dx / [2t² / (t³ - 1)] = (t³ - 1)/2t² * dx. But we have dx = -6t² / (t³ - 1)² dt, so substituting:
+
+(t³ - 1)/2t² * (-6t²)/(t³ - 1)² dt = (t³ - 1)(-6t²) / [2t²(t³ - 1)²] dt = (-6)/(2(t³ - 1)) dt = -3/(t³ - 1) dt.
+
+So the integral simplifies to ∫ -3/(t³ - 1) dt. Wait, let's check that again. Let's re-express the denominator:
+
+Original denominator: ∛[(x - 1)(x + 1)²] = ∛[(x - 1)(x + 1)^2] = [(x - 1)(x + 1)^2]^(1/3). We found (x - 1)(x + 1)^2 = 8t^6 / (t³ - 1)^3, so the cube root is (8t^6 / (t³ - 1)^3)^(1/3) = 2t² / (t³ - 1). So 1 over that is (t³ - 1)/(2t²). Then dx is -6t²/(t³ - 1)^2 dt. So the integrand is (t³ - 1)/(2t²) * (-6t²)/(t³ - 1)^2 dt = (t³ - 1)(-6t²) / [2t²(t³ - 1)^2] dt = (-6)/(2(t³ - 1)) dt = -3/(t³ - 1) dt. Yes, that's correct.
+
+So the integral becomes -3 ∫ 1/(t³ - 1) dt. Now, we need to integrate 1/(t³ - 1). Let's factor t³ - 1 = (t - 1)(t² + t + 1). So partial fractions: 1/[(t - 1)(t² + t + 1)] = A/(t - 1) + (Bt + C)/(t² + t + 1). Multiply both sides by (t - 1)(t² + t + 1):
+
+1 = A(t² + t + 1) + (Bt + C)(t - 1).
+
+Let t = 1: 1 = A(1 + 1 + 1) ⇒ A = 1/3.
+
+Expand the right-hand side: A t² + A t + A + B t² - B t + C t - C = (A + B)t² + (A - B + C)t + (A - C).
+
+Set coefficients equal:
+
+t²: A + B = 0 ⇒ B = -A = -1/3.
+
+t: A - B + C = 0 ⇒ 1/3 - (-1/3) + C = 0 ⇒ 2/3 + C = 0 ⇒ C = -2/3.
+
+constant: A - C = 1 ⇒ 1/3 - (-2/3) = 1, which checks out (1/3 + 2/3 = 1).
+
+So 1/(t³ - 1) = (1/3)/(t - 1) + (- (1/3)t - 2/3)/(t² + t + 1) = (1/3)[1/(t - 1) - (t + 2)/(t² + t + 1)].
+
+Therefore, ∫ 1/(t³ - 1) dt = (1/3) ∫ [1/(t - 1) - (t + 2)/(t² + t + 1)] dt.
+
+Let's compute the integral term by term.
+
+First term: (1/3) ∫ 1/(t - 1) dt = (1/3) ln|t - 1| + C.
+
+Second term: (1/3) ∫ (t + 2)/(t² + t + 1) dt. Let's split the numerator: t + 2 = (1/2)(2t + 1) + (3/2). Because 2t + 1 is the derivative of t² + t + 1.
+
+So (t + 2) = (1/2)(2t + 1) + 3/2. Therefore,
+
+∫ (t + 2)/(t² + t + 1) dt = (1/2) ∫ (2t + 1)/(t² + t + 1) dt + (3/2) ∫ 1/(t² + t + 1) dt.
+
+First part: (1/2) ln|t² + t + 1| + C.
+
+Second part: (3/2) ∫ 1/[(t + 1/2)² + (3/4)] dt = (3/2) * (2/√3) arctan[(2t + 1)/√3] + C = √3 arctan[(2t + 1)/√3] + C. Wait, let's check:
+
+The integral of 1/(u² + a²) du = (1/a) arctan(u/a) + C. Here, t² + t + 1 = (t + 1/2)^2 + (√3/2)^2. So a = √3/2. Then ∫ 1/( (t + 1/2)^2 + (√3/2)^2 ) dt = (2/√3) arctan( (2t + 1)/√3 ) + C. Therefore, (3/2) times that is (3/2)(2/√3) arctan( (2t + 1)/√3 ) = (3/√3) arctan( (2t + 1)/√3 ) = √3 arctan( (2t + 1)/√3 ) + C.
+
+So putting it all together:
+
+∫ 1/(t³ - 1) dt = (1/3) ln|t - 1| - (1/3)[ (1/2) ln(t² + t + 1) + √3 arctan( (2t + 1)/√3 ) ] + C.
+
+Simplify:
+
+= (1/3) ln|t - 1| - (1/6) ln(t² + t + 1) - (√3 / 3) arctan( (2t + 1)/√3 ) + C.
+
+Multiply by -3 (since our integral is -3 times this):
+
+-3 ∫ 1/(t³ - 1) dt = -3*(1/3) ln|t - 1| + 3*(1/6) ln(t² + t + 1) + 3*(√3 / 3) arctan( (2t + 1)/√3 ) + C
+
+= -ln|t - 1| + (1/2) ln(t² + t + 1) + √3 arctan( (2t + 1)/√3 ) + C.
+
+Now, let's express t² + t + 1 in terms of t. Remember t = ∛[(x + 1)/(x - 1)], so t³ = (x + 1)/(x - 1). Let's compute t² + t + 1.
+
+Note that t³ - 1 = (t - 1)(t² + t + 1) ⇒ t² + t + 1 = (t³ - 1)/(t - 1). But maybe better to express in terms of the original variables.
+
+Wait, let's recall that in the answer choices, we have terms like ln|t² + t + 1|, ln|t - 1|, and arctan terms with (2t + 1)/√3.
+
+Let's check the arctan term: (2t + 1)/√3. The problem has arctan(2√3/3 (something)), note that 2√3/3 = 2/√3. Wait, 2√3/3 = (2/√3) * (√3/√3) = 2√3/3. Let's see: (2t + 1)/√3 = (2t + 1) * (√3/3) * 3/√3? Maybe not. Let's compute the coefficient.
+
+The arctan term in the answer choices is arctan(2√3/3 * (t - 1/2)) or something. Wait, let's look at the answer choices.
+
+First, let's note that in our expression:
+
+- ln|t - 1| + (1/2) ln(t² + t + 1) + √3 arctan( (2t + 1)/√3 ) + C.
+
+Let's combine the logarithmic terms:
+
+(1/2) ln(t² + t + 1) - ln|t - 1| = (1/2) ln(t² + t + 1) - (1/2) ln(t - 1)² = (1/2) ln[ (t² + t + 1)/(t - 1)² ].
+
+But t² + t + 1 = (t³ - 1)/(t - 1) (since t³ - 1 = (t - 1)(t² + t + 1)), so (t² + t + 1)/(t - 1)² = (t³ - 1)/(t - 1)³ = [ (x + 1)/(x - 1) - 1 ] / [ (x + 1)/(x - 1) - 1 ]³? Wait, maybe better to express t in terms of x.
+
+Wait, t = ∛[(x + 1)/(x - 1)], so let's compute t - 1 and t² + t + 1.
+
+First, (t³ - 1) = (x + 1)/(x - 1) - 1 = [x + 1 - (x - 1)]/(x - 1) = 2/(x - 1). So t³ - 1 = 2/(x - 1) ⇒ (t - 1)(t² + t + 1) = 2/(x - 1).
+
+Also, t³ = (x + 1)/(x - 1) ⇒ x = (t³ + 1)/(t³ - 1) as before.
+
+Let's compute the logarithmic terms:
+
+(1/2) ln(t² + t + 1) - ln|t - 1| = (1/2) ln(t² + t + 1) - (1/2) ln(t - 1)² = (1/2) ln[ (t² + t + 1)/(t - 1)² ].
+
+But from t³ - 1 = (t - 1)(t² + t + 1) = 2/(x - 1), so t² + t + 1 = 2/[(x - 1)(t - 1)].
+
+Therefore, (t² + t + 1)/(t - 1)² = 2/[(x - 1)(t - 1)³].
+
+Hmm, maybe not helpful. Let's look at the answer choices.
+
+Looking at the answer choices, they all have terms like ln|t² + t + 1|, ln|t - 1|, and arctan terms with (2t + 1)/√3.
+
+Let's compute (2t + 1)/√3. Let's see if that relates to the arctan in the answer choices. The answer choices have arctan(2√3/3 (t - 1/2)), since 2√3/3 = 2/√3. Let's check:
+
+(2t + 1)/√3 = (2(t + 1/2))/√3 = (2/√3)(t + 1/2). So arctan( (2t + 1)/√3 ) = arctan( (2/√3)(t + 1/2) ). But 2/√3 = 2√3/3, so it's arctan( (2√3/3)(t + 1/2) ). Wait, the answer choices have arctan(2√3/3 (something)), so maybe that's the case.
+
+In our integral, we have +√3 arctan( (2t + 1)/√3 ) + C. Let's write that as √3 arctan( (2√3/3)(t + 1/2) ) + C, since (2t + 1)/√3 = (2√3/3)(t + 1/2) * (3/√3)? Wait, let's compute:
+
+(2√3/3)(t + 1/2) = (2√3 t)/3 + (√3)/3. Multiply by √3: (2√3 t)/3 * √3 + (√3)/3 * √3 = (2*3 t)/3 + 3/3 = 2t + 1. So (2t + 1)/√3 = (2√3/3)(t + 1/2). Yes, because:
+
+(2√3/3)(t + 1/2) = (2√3 t)/3 + √3/3. Multiply both sides by √3: (2√3 t)/3 * √3 + √3/3 * √3 = 2t + 1. So yes, (2t + 1)/√3 = (2√3/3)(t + 1/2) * √3? Wait, maybe better to just note that the arctan term in the answer choices is written as arctan(2√3/3 (expression)), so our term is √3 arctan( (2t + 1)/√3 ) = √3 arctan( (2√3/3)(t + 1/2) ) because (2t + 1)/√3 = (2√3/3)(t + 1/2) * (3/√3)? Wait, let's do the algebra:
+
+Let me set k = 2√3/3. Then k = 2/√3. So (2t + 1)/√3 = (2t)/√3 + 1/√3 = (2/√3)t + 1/√3 = k t + (1/√3). But 1/√3 = (2√3/3)(1/2), since 2√3/3 * 1/2 = √3/3 = 1/√3. So (2t + 1)/√3 = k(t + 1/2). Yes, because k(t + 1/2) = (2√3/3)(t + 1/2) = (2√3 t)/3 + √3/3 = (2t)/√3 + 1/√3 = (2t + 1)/√3. Perfect! So (2t + 1)/√3 = (2√3/3)(t + 1/2). Therefore, arctan( (2t + 1)/√3 ) = arctan( (2√3/3)(t + 1/2) ).
+
+So our arctan term is √3 arctan( (2√3/3)(t + 1/2) ). Let's check the answer choices. For example, choice D has +√3 arctan(2√3/3)(t + 1/2). Wait, in the answer choices, the arctan term is written as sqrt(3) arctan(2 sqrt(3)/3 (sqrt[3]{...} + 1/2)). Yes, so in our integral, we have +√3 arctan(2√3/3 (t + 1/2)).
+
+Now, let's look at the logarithmic terms. Our integral result is:
+
+- ln|t - 1| + (1/2) ln(t² + t + 1) + √3 arctan(2√3/3 (t + 1/2)) + C.
+
+Let's factor the logs:
+
+(1/2) ln(t² + t + 1) - ln|t - 1| = (1/2) [ ln(t² + t + 1) - 2 ln|t - 1| ] = (1/2) ln[ (t² + t + 1)/(t - 1)² ].
+
+But let's express t² + t + 1 in terms of x. Recall that t³ = (x + 1)/(x - 1). Let's compute (t² + t + 1)/(t - 1)².
+
+From earlier, t³ - 1 = (t - 1)(t² + t + 1) = 2/(x - 1) (since t³ - 1 = (x + 1)/(x - 1) - 1 = 2/(x - 1)).
+
+So (t² + t + 1) = 2/[ (x - 1)(t - 1) ].
+
+Therefore, (t² + t + 1)/(t - 1)² = 2/[ (x - 1)(t - 1)³ ].
+
+But maybe it's better to look at the answer choices. Let's check the signs and the terms.
+
+Let's consider the answer choices:
+
+Option D: (1/2)ln|t² + t + 1| - ln|t - 1| + √3 arctan(2√3/3)(t + 1/2) + C.
+
+Wait, in our result, we have (1/2)ln(t² + t + 1) - ln|t - 1| + √3 arctan(...) + C. Which matches option D exactly! Let's check:
+
+Yes, option D is:
+
+D. (1/2)ln |t² + t + 1| - ln |t - 1| + √3 arctan(2√3/3)(t + 1/2) + C
+
+Where t = ∛[(x + 1)/(x - 1)].
+
+Let me confirm the signs. In our integral, we had:
+
+-3 ∫ 1/(t³ - 1) dt = -ln|t - 1| + (1/2) ln(t² + t + 1) + √3 arctan( (2t + 1)/√3 ) + C.
+
+Which is (1/2) ln(t² + t + 1) - ln|t - 1| + √3 arctan(2√3/3 (t + 1/2)) + C. Exactly option D.
+
+Let's check another option to be sure. For example, option C has -1/2 ln(...) - ln(...) + ... which has a negative sign on the first log term, but we have positive 1/2 ln(...). Option D has positive 1/2 ln(...) - ln(...), which matches.
+
+Let's check the arctan term: in the answer, it's +√3 arctan(2√3/3 (t + 1/2)), which is what we have. The other options have different signs or different expressions inside the arctan.
+
+Also, the logarithmic terms: in the answer choices, they have ln|sqrt[3]{(x+1)/(x-1)}² + sqrt[3]{(x+1)/(x-1)} + 1|, which is ln|t² + t + 1|, and ln|t - 1|. So option D has (1/2) ln|t² + t + 1| - ln|t - 1|, which matches our result.
+
+Let me check if there's a sign error. Let's go back to the substitution.
+
+We had the integrand dx / ∛[(x - 1)(x + 1)^2] = -3/(t³ - 1) dt. Then integrating -3/(t³ - 1) dt. Wait, when we did partial fractions, we had 1/(t³ - 1) = (1/3)/(t - 1) + (- (t + 2)/3)/(t² + t + 1). So the integral of 1/(t³ - 1) is (1/3) ln|t - 1| - (1/3) ∫ (t + 2)/(t² + t + 1) dt. Then multiplying by -3 gives -ln|t - 1| + ∫ (t + 2)/(t² + t + 1) dt. Which is what we did.
+
+Yes, so the integral becomes -ln|t - 1| + (1/2) ln(t² + t + 1) + √3 arctan( (2t + 1)/√3 ) + C, which is option D.
+
+Let me check option D again: D. (1/2)ln |t² + t + 1| - ln |t - 1| + √3 arctan(2√3/3)(t + 1/2) + C. Yes, that's exactly what we have.
+
+The other options have different signs or different expressions. For example, option J has -1/2 ln(...) + ln(...) - ..., which is different.
+
+So I think the answer is D.
+</think>
+
+To evaluate the integral
+
+$$
+\int \frac{dx}{\sqrt[3]{(x-1)(x+1)^2}},
+$$
+
+we begin by simplifying the expression under the cube root. Let us define a substitution to simplify the integrand.
+
+---
+
+### Step 1: Substitution
+
+Let:
+
+$$
+t = \sqrt[3]{\frac{x+1}{x-1}}.
+$$
+
+Then:
+
+$$
+t^3 = \frac{x+1}{x-1} \quad \Rightarrow \quad x = \frac{t^3 + 1}{t^3 - 1}.
+$$
+
+Differentiating $x$ with respect to $t$, we find:
+
+$$
+dx = \frac{-6t^2}{(t^3 - 1)^2} dt.
+$$
+
+Now compute the denominator of the original integrand:
+
+$$
+(x - 1)(x + 1)^2 = \left(\frac{2}{t^3 - 1}\right)\left(\frac{2t^3}{t^3 - 1}\right)^2 = \frac{8t^6}{(t^3 - 1)^3}.
+$$
+
+Taking the cube root:
+
+$$
+\sqrt[3]{(x - 1)(x + 1)^2} = \frac{2t^2}{t^3 - 1}.
+$$
+
+So the integrand becomes:
+
+$$
+\frac{dx}{\sqrt[3]{(x - 1)(x + 1)^2}} = \frac{(t^3 - 1)}{2t^2} \cdot \left( \frac{-6t^2}{(t^3 - 1)^2} \right) dt = \frac{-3}{t^3 - 1} dt.
+$$
+
+Thus, the integral becomes:
+
+$$
+\int \frac{dx}{\sqrt[3]{(x - 1)(x + 1)^2}} = -3 \int \frac{1}{t^3 - 1} dt.
+$$
+
+---
+
+### Step 2: Partial Fraction Decomposition
+
+We factor $t^3 - 1 = (t - 1)(t^2 + t + 1)$ and decompose:
+
+$$
+\frac{1}{t^3 - 1} = \frac{1}{3(t - 1)} - \frac{t + 2}{3(t^2 + t + 1)}.
+$$
+
+Integrating term by term:
+
+- $\int \frac{1}{t - 1} dt = \ln|t - 1|$,
+- $\int \frac{t + 2}{t^2 + t + 1} dt = \frac{1}{2} \ln(t^2 + t + 1) + \sqrt{3} \arctan\left( \frac{2t + 1}{\sqrt{3}} \right)$.
+
+Putting it all together:
+
+$$
+\int \frac{1}{t^3 - 1} dt = \frac{1}{3} \ln|t - 1| - \frac{1}{6} \ln(t^2 + t + 1) - \frac{\sqrt{3}}{3} \arctan\left( \frac{2t + 1}{\sqrt{3}} \right).
+$$
+
+Multiplying by $-3$:
+
+$$
+-3 \int \frac{1}{t^3 - 1} dt = -\ln|t - 1| + \frac{1}{2} \ln(t^2 + t + 1) + \sqrt{3} \arctan\left( \frac{2t + 1}{\sqrt{3}} \right).
+$$
+
+Recall that:
+
+$$
+\frac{2t + 1}{\sqrt{3}} = \frac{2\sqrt{3}}{3}(t + \frac{1}{2}),
+$$
+
+so the arctangent term becomes:
+
+$$
+\sqrt{3} \arctan\left( \frac{2\sqrt{3}}{3}(t + \frac{1}{2}) \right).
+$$
+
+---
+
+### Step 3: Matching with Answer Choices
+
+The result is:
+
+$$
+\frac{1}{2} \ln|t^2 + t + 1| - \ln|t - 1| + \sqrt{3} \arctan\left( \frac{2\sqrt{3}}{3}(t + \frac{1}{2}) \right) + C,
+$$
+
+where $t = \sqrt[3]{\frac{x+1}{x-1}}$.
+
+This matches **exactly** with **Option D**:
+
+> **D.** $\frac{1}{2} \ln \left| {\sqrt[3]{\frac{x+1}{x-1}}}^{2} + \sqrt[3]{\frac{x+1}{x-1}} + 1 \right| - \ln \left| \sqrt[3]{\frac{x+1}{x-1}} - 1 \right| + \sqrt{3} \arctan \frac{2\sqrt{3}}{3} \left( \sqrt[3]{\frac{x+1}{x-1}} + \frac{1}{2} \right) + C$
+
+---
+
+### Final Answer
+
+$$
+\boxed{D}
+$$"
+768,"Okay, let's try to figure out the inverse function of the given piecewise function. First, I need to recall that to find the inverse, we need to swap x and y for each piece and solve for y, making sure to determine the correct domain for each inverse piece.
+
+The original function is defined as:
+
+- For \( x \leq 0 \): \( y = 1 + e^{-x} \)
+- For \( 0 < x < 1 \): \( y = 2 - 2x \)
+- For \( x \geq 1 \): \( y = 2x - (1 + x^2) \)
+
+Let me handle each piece one by one.
+
+**First piece: \( x \leq 0 \), \( y = 1 + e^{-x} \)**
+
+To find the inverse, swap x and y: \( x = 1 + e^{-y} \), solve for y.
+
+Subtract 1: \( x - 1 = e^{-y} \)
+
+Take natural log: \( \ln(x - 1) = -y \) => \( y = -\ln(x - 1) \)
+
+Now, we need to find the domain of the inverse function for this piece. The original x was \( \leq 0 \), so let's find the range of y in this piece.
+
+When \( x \leq 0 \), \( -x \geq 0 \), so \( e^{-x} \geq 1 \) (since \( e^0 = 1 \)), so \( y = 1 + e^{-x} \geq 2 \). When x approaches negative infinity, \( e^{-x} \) approaches infinity, so y approaches infinity. When x = 0, y = 1 + e^0 = 2. So the range here is \( y \geq 2 \). Therefore, the inverse function for this piece has domain \( x \geq 2 \), and the expression is \( y = -\ln(x - 1) \). Wait, let me check: when x = 0 (original), y = 2. So in the inverse, when x = 2, y = 0. Let's verify: if x = 2, then \( y = -\ln(2 - 1) = -\ln(1) = 0 \), which matches. If x = 3 (original x = -1, since y = 1 + e^{-(-1)} = 1 + e^1 ≈ 3.718, so inverse: x = 3.718, y = -1). Wait, maybe better to track the range.
+
+Original x ≤ 0: y = 1 + e^{-x}. Since x ≤ 0, let's let t = -x, so t ≥ 0. Then y = 1 + e^t, t ≥ 0. So y ≥ 1 + e^0 = 2. So the range is [2, ∞). Therefore, the inverse function's domain for this piece is x ≥ 2, and the expression is y = -ln(x - 1). That seems right.
+
+**Second piece: \( 0 < x < 1 \), \( y = 2 - 2x \)**
+
+Swap x and y: \( x = 2 - 2y \), solve for y.
+
+x = 2 - 2y => 2y = 2 - x => y = (2 - x)/2 = 1 - (x)/2.
+
+Now, find the domain of the inverse for this piece. Original x is (0, 1), so let's find the range of y here.
+
+When x approaches 0 from the right: y = 2 - 0 = 2.
+
+When x approaches 1 from the left: y = 2 - 2(1) = 0.
+
+So the range is (0, 2). Therefore, the inverse function for this piece has domain 0 < x < 2, and expression y = 1 - (x)/2. That makes sense. For example, when original x = 0.5, y = 2 - 1 = 1. Then inverse: x = 1, y = 1 - 1/2 = 0.5. Correct.
+
+**Third piece: \( x \geq 1 \), \( y = 2x - 1 - x^2 \)**
+
+Let's write that as \( y = -x^2 + 2x - 1 = -(x^2 - 2x + 1) = -(x - 1)^2 \). Oh, that's a quadratic, which is a downward opening parabola with vertex at (1, 0). Let's confirm: when x = 1, y = 2(1) - 1 - 1 = 0. When x = 2, y = 4 - 1 - 4 = -1. When x = 3, y = 6 - 1 - 9 = -4. So as x increases from 1 to infinity, y decreases from 0 to negative infinity.
+
+So the range of this piece is (-∞, 0]. Let's verify: y = -(x - 1)^2, so since x ≥ 1, (x - 1) ≥ 0, so (x - 1)^2 ≥ 0, so y ≤ 0. Correct.
+
+Now, to find the inverse, swap x and y: \( x = -y^2 + 2y - 1 \). Wait, no: original is y = 2x - 1 - x^2, so swapping x and y: x = 2y - 1 - y^2. Let's solve for y.
+
+Rearranged: \( y^2 - 2y + (x + 1) = 0 \). Wait, let's do it step by step.
+
+Original: \( y = -x^2 + 2x - 1 \) (but here, x is the original variable, which is ≥1). Wait, maybe better to use different letters to avoid confusion.
+
+Let me denote the original function as f(t) = 2t - 1 - t^2 for t ≥ 1. Then to find the inverse, we solve for t in terms of s, where s = f(t).
+
+So s = 2t - 1 - t^2 => t^2 - 2t + (s + 1) = 0.
+
+Solving quadratic equation: t = [2 ± sqrt(4 - 4*1*(s + 1))]/2 = [2 ± sqrt(4 - 4s - 4)]/2 = [2 ± sqrt(-4s)]/2 = [2 ± 2i sqrt(s)]/2. Wait, that can't be right. Wait, no, I messed up the sign.
+
+Wait, s = -t^2 + 2t - 1 => t^2 - 2t + (s + 1) = 0. Then discriminant D = ( -2 )^2 - 4*1*(s + 1) = 4 - 4s - 4 = -4s. So sqrt(D) = sqrt(-4s) = 2i sqrt(s). But since t is real (as original function is real), this suggests that s must be ≤ 0, which matches our earlier conclusion (range is (-∞, 0]).
+
+But we need to solve for t (the original x, which is ≥1). Let's rearrange the equation:
+
+s = - (t^2 - 2t) = - (t^2 - 2t + 1 - 1) = - ( (t - 1)^2 - 1 ) = 1 - (t - 1)^2. Wait, that's a better way. So s = 1 - (t - 1)^2. Then (t - 1)^2 = 1 - s. Since t ≥ 1, t - 1 ≥ 0, so t - 1 = sqrt(1 - s). Therefore, t = 1 + sqrt(1 - s).
+
+Wait, let's check: if s = 0 (when t = 1), then t = 1 + sqrt(1 - 0) = 2? Wait, no. Wait, s = 1 - (t - 1)^2. When t = 1, s = 1 - 0 = 1? Wait, no, original function: when t = 1, y = 2(1) - (1 + 1^2) = 2 - 2 = 0. Wait, I think I made a mistake here.
+
+Original function: y = 2x - (1 + x^2) = 2x - 1 - x^2. So that's -x^2 + 2x - 1. Let's compute at x = 1: -1 + 2 - 1 = 0. Correct. At x = 2: -4 + 4 - 1 = -1. Correct. So y = -x^2 + 2x - 1 = - (x^2 - 2x + 1) = - (x - 1)^2. Ah! So y = - (x - 1)^2. That's a key point. So y is negative or zero (since square is non-negative, times -1). So for x ≥ 1, y = - (x - 1)^2.
+
+So to find the inverse, we have s = - (t - 1)^2, where t ≥ 1 (original x). Solve for t in terms of s.
+
+s = - (t - 1)^2 => (t - 1)^2 = -s => t - 1 = sqrt(-s) (since t ≥ 1, t - 1 ≥ 0, so we take the positive root). Therefore, t = 1 + sqrt(-s).
+
+Let's check with an example. Take original x = 1: y = 0. Then inverse: s = 0, so t = 1 + sqrt(0) = 1. Correct. Original x = 2: y = - (2 - 1)^2 = -1. Then inverse: s = -1, so t = 1 + sqrt(-(-1)) = 1 + sqrt(1) = 2. Correct. Original x = 3: y = - (3 - 1)^2 = -4. Inverse: s = -4, t = 1 + sqrt(4) = 3. Correct. So that works.
+
+So the inverse function for this piece is t = 1 + sqrt(-s). But in the inverse function, the variable is usually x (the input), so we need to express it as y = 1 + sqrt(-x). Wait, let's clarify.
+
+Let me use the standard inverse function notation. Let f be the original function, so f(x) = y. Then the inverse function f^{-1}(y) = x. So to write f^{-1}(x), we have x = f(y), solve for y.
+
+For the third piece: original domain is x ≥ 1 (let's call this the input to f), output y = - (x - 1)^2 (so y ≤ 0). So when we take the inverse, the input to f^{-1} is x (which is the output of f), so x ≤ 0, and f^{-1}(x) = 1 + sqrt(-x). Because:
+
+x (input to inverse) = f(y) = - (y - 1)^2 => (y - 1)^2 = -x => y = 1 + sqrt(-x) (since y ≥ 1, sqrt(-x) is non-negative, so y = 1 + sqrt(-x)).
+
+Let's check with x = 0 (output of f when input is 1): f^{-1}(0) = 1 + sqrt(0) = 1. Correct. x = -1 (output of f when input is 2): f^{-1}(-1) = 1 + sqrt(1) = 2. Correct. x = -4 (output of f when input is 3): f^{-1}(-4) = 1 + sqrt(4) = 3. Correct.
+
+So the inverse function for the third piece is y = 1 + sqrt(-x). Wait, but in the answer choices, they have ""1 + sqrt(|x|)"" with x ≤ -1. Let's see.
+
+Wait, in the third piece, the output of f is y ≤ 0, so the input to f^{-1} is x ≤ 0. But in the answer choices, the third piece is written as ""1 + sqrt(|x|)"" with x ≤ -1 or x ≤ 0.
+
+Wait, sqrt(|x|) when x is negative: |x| = -x, so sqrt(|x|) = sqrt(-x). So 1 + sqrt(|x|) = 1 + sqrt(-x) for x ≤ 0. So that's the same as what we have.
+
+So for the third piece, the inverse function is y = 1 + sqrt(|x|) where x ≤ 0 (since original output is ≤ 0). But let's check the domain.
+
+Original third piece: x ≥ 1 (input to f) gives output y = - (x - 1)^2 ≤ 0. So the range of the third piece is (-∞, 0]. Therefore, the domain of the inverse function for this piece is x ≤ 0.
+
+Wait, but in the answer choices, some have x ≤ -1, some x ≤ 0, etc.
+
+Let's recap all inverse pieces:
+
+1. First piece (original x ≤ 0): inverse function is y = -ln(x - 1) with domain x ≥ 2 (since original range is [2, ∞)).
+2. Second piece (original 0 < x < 1): inverse function is y = 1 - (x)/2 with domain 0 < x < 2 (since original range is (0, 2)).
+3. Third piece (original x ≥ 1): inverse function is y = 1 + sqrt(|x|) with domain x ≤ 0 (since original range is (-∞, 0]).
+
+Wait, but let's check the answer choices.
+
+Looking at the options:
+
+Option A: y = { -ln(x - 1), x ≥ 2; 1 - (1/2)x, 0 < x < 1; 1 + sqrt(|x|), x ≤ -1 }
+
+Option B: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ 0 }
+
+Option C: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ -1 }
+
+Option D: ... (probably not)
+
+Option E: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ -2 }
+
+Option F: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ 1 }
+
+Option G: y = { -ln(x - 1), x ≥ 2; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ 0 }
+
+Option H: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 1; 1 + sqrt(|x|), x ≤ 0 }
+
+Option I: y = { -ln(x - 1), x ≥ 1; 1 - (1/2)x, 0 < x < 1; 1 + sqrt(|x|), x ≤ 0 }
+
+Option J: y = { -ln(x - 1), x ≥ 2; 1 - (1/2)x, -2 < x < 2; 1 + sqrt(|x|), x ≤ -2 }
+
+From our analysis:
+
+- First inverse piece: domain x ≥ 2 (since original range is [2, ∞)), expression -ln(x - 1)
+- Second inverse piece: domain 0 < x < 2 (since original range is (0, 2)), expression 1 - (1/2)x
+- Third inverse piece: domain x ≤ 0 (since original range is (-∞, 0]), expression 1 + sqrt(|x|) (since for x ≤ 0, |x| = -x, so sqrt(|x|) = sqrt(-x), so 1 + sqrt(|x|) = 1 + sqrt(-x), which matches our earlier result)
+
+Now let's check the answer choices against this.
+
+Option A: third piece domain x ≤ -1. But original third piece's range is (-∞, 0], so inverse domain should be (-∞, 0], not just x ≤ -1. For example, when x = -0.5 (which is in (-∞, 0)), the inverse function should be defined. Let's see: if x = -0.5, then y = 1 + sqrt(|-0.5|) = 1 + sqrt(0.5) ≈ 1.707. Is that correct? Let's check the original function: what x gives y = -0.5? For the third piece, y = - (x - 1)^2 = -0.5 => (x - 1)^2 = 0.5 => x = 1 ± sqrt(0.5). Since original domain for third piece is x ≥ 1, x = 1 + sqrt(0.5) ≈ 1.707. So f(1.707) = -0.5, so f^{-1}(-0.5) = 1.707, which is 1 + sqrt(0.5) = 1 + sqrt(|-0.5|). So x = -0.5 is in the domain of the third inverse piece (x ≤ 0), but option A says x ≤ -1, so -0.5 is not included there. So option A is wrong.
+
+Option B: first piece domain x ≥ 1. But we know first piece's inverse domain is x ≥ 2. For example, when x = 1.5 (which is in x ≥ 1), does the inverse function exist? The original first piece has range [2, ∞), so x = 1.5 is not in the domain of the first inverse piece. So option B is wrong.
+
+Option C: first piece domain x ≥ 1 (wrong, should be ≥2), third piece x ≤ -1 (wrong, should be ≤0). So no.
+
+Option D: first piece domain x ≥ 2 (correct), second piece -2 < x < 0 (wrong, second inverse piece should be 0 < x < 2), so no.
+
+Option E: third piece x ≤ -2 (wrong, should be ≤0).
+
+Option F: third piece x ≤ 1 (wrong, should be ≤0).
+
+Option G: first piece x ≥ 2 (correct), second piece 0 < x < 2 (correct), third piece x ≤ 0 (correct). Let's check:
+
+Option G: y = { -ln(x - 1), x ≥ 2; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ 0 }
+
+Yes! Let's verify each part.
+
+First piece: x ≥ 2. For x = 2, inverse function gives y = -ln(2 - 1) = 0. Which matches original: when x = 0 (original), y = 1 + e^0 = 2. So f(0) = 2, so f^{-1}(2) = 0. Correct.
+
+Second piece: 0 < x < 2. For x = 1 (in this interval), inverse function gives y = 1 - 1/2 = 0.5. Original: f(0.5) = 2 - 2*0.5 = 1, so f^{-1}(1) = 0.5. Correct.
+
+Third piece: x ≤ 0. For x = -1 (in this interval), inverse function gives y = 1 + sqrt(|-1|) = 1 + 1 = 2. Let's check original: f(2) = 2*2 - (1 + 2^2) = 4 - 5 = -1. So f(2) = -1, so f^{-1}(-1) = 2. Correct. For x = -0.5 (in x ≤ 0), inverse function gives y = 1 + sqrt(0.5) ≈ 1.707. Original: f(1 + sqrt(0.5)) = 2*(1 + sqrt(0.5)) - (1 + (1 + sqrt(0.5))^2). Let's compute:
+
+(1 + sqrt(0.5))^2 = 1 + 2*sqrt(0.5) + 0.5 = 1.5 + sqrt(2)
+
+So f(1 + sqrt(0.5)) = 2 + 2*sqrt(0.5) - (1 + 1.5 + sqrt(2)) = 2 + sqrt(2) - 2.5 - sqrt(2) = -0.5. So f(1 + sqrt(0.5)) = -0.5, so f^{-1}(-0.5) = 1 + sqrt(0.5), which matches the inverse function expression. Correct.
+
+Another check: for the third piece, when x = 0 (the boundary), inverse function gives y = 1 + sqrt(0) = 1. Original: f(1) = 2*1 - (1 + 1) = 0. So f(1) = 0, so f^{-1}(0) = 1. Correct.
+
+Wait, but in option G, the third piece is written as ""x ≤ 0"". Let's check the answer choices again.
+
+Looking at option G: ""y = { -ln(x - 1), x ≥ 2; 1 - (1/2)x, 0 < x < 2; 1 + sqrt(|x|), x ≤ 0 }""
+
+Yes, that matches our analysis.
+
+Let's check other options to be sure.
+
+Option H: second piece domain 0 < x < 1. But original second piece's range is (0, 2), so inverse domain should be (0, 2), not (0, 1). For example, when x = 1.5 (in (0, 2)), inverse function gives y = 1 - 0.75 = 0.25. Original: f(0.25) = 2 - 2*0.25 = 1.5. So f^{-1}(1.5) = 0.25, which is correct. So the second piece should be 0 < x < 2, not 0 < x < 1. So option H and I have 0 < x < 1 for the second piece, which is wrong.
+
+Option J: second piece is -2 < x < 2, which is incorrect.
+
+So the correct answer should be option G.
+
+Wait, let me check option G again. The problem states:
+
+G. $y = left{ begin{array}{l} - ln (x - 1),{rm{ }}quad x ge 2, 1 - frac{1}{2}x,{rm{ }}qquad ,0 < x < 2, 1 + sqrt {|x|} {rm{, }};;,{rm{ }}quad x le 0 end{array} right. $
+
+Yes, that's exactly what we have.
+
+Let me check if there's any mistake in the third piece's domain. The original third piece (x ≥ 1) maps to y ≤ 0, so the inverse function's domain for this piece is all x ≤ 0. For example, x = 0 is included (since original third piece has y = 0 when x = 1), so f^{-1}(0) = 1. Which is 1 + sqrt(|0|) = 1 + 0 = 1. Correct.
+
+Another check: when x = -1 (in the third piece's domain), inverse function gives 1 + sqrt(1) = 2. Original function: f(2) = 2*2 - (1 + 4) = 4 - 5 = -1. So f(2) = -1, so f^{-1}(-1) = 2. Correct.
+
+When x = 2 (first piece's domain), inverse function gives -ln(2 - 1) = 0. Original function: f(0) = 1 + e^0 = 2. So f(0) = 2, so f^{-1}(2) = 0. Correct.
+
+When x = 1 (second piece's domain), inverse function gives 1 - 1/2 = 0.5. Original function: f(0.5) = 2 - 2*0.5 = 1. So f(0.5) = 1, so f^{-1}(1) = 0.5. Correct.
+
+All checks out. So the answer is G.
+</think>
+
+To determine the inverse of the given piecewise function:
+
+$$
+y = 
+\begin{cases}
+1 + e^{-x}, & x \leq 0 \\
+2 - 2x, & 0 < x < 1 \\
+2x - (1 + x^2), & x \geq 1
+\end{cases}
+$$
+
+we analyze each piece individually and find the corresponding inverse function with its correct domain.
+
+---
+
+### **1. First Piece: $ x \leq 0 $, $ y = 1 + e^{-x} $**
+
+- **Swap** $ x $ and $ y $:  
+  $$
+  x = 1 + e^{-y}
+  $$
+- Solve for $ y $:  
+  $$
+  x - 1 = e^{-y} \Rightarrow \ln(x - 1) = -y \Rightarrow y = -\ln(x - 1)
+  $$
+- **Domain**: The original $ x \leq 0 $ implies $ y = 1 + e^{-x} \geq 2 $. So the **range** of this piece is $ [2, \infty) $, which becomes the **domain** of the inverse: $ x \geq 2 $
+
+✅ **Inverse expression**: $ y = -\ln(x - 1) $, **domain**: $ x \geq 2 $
+
+---
+
+### **2. Second Piece: $ 0 < x < 1 $, $ y = 2 - 2x $**
+
+- **Swap** $ x $ and $ y $:  
+  $$
+  x = 2 - 2y \Rightarrow y = 1 - \frac{x}{2}
+  $$
+- **Domain**: Original $ x \in (0, 1) $ gives $ y \in (0, 2) $, so the **domain** of the inverse is $ 0 < x < 2 $
+
+✅ **Inverse expression**: $ y = 1 - \frac{x}{2} $, **domain**: $ 0 < x < 2 $
+
+---
+
+### **3. Third Piece: $ x \geq 1 $, $ y = 2x - (1 + x^2) = -x^2 + 2x - 1 = -(x - 1)^2 $**
+
+- This is a downward-opening parabola with vertex at $ (1, 0) $, and it maps $ x \geq 1 $ to $ y \leq 0 $
+- **Swap** $ x $ and $ y $:  
+  $$
+  x = -(y - 1)^2 \Rightarrow (y - 1)^2 = -x \Rightarrow y = 1 + \sqrt{-x}
+  $$
+- Since $ x \leq 0 $ in the inverse domain (as the range of the original function is $ (-\infty, 0] $), we can write:
+  $$
+  y = 1 + \sqrt{|x|}
+  $$
+- **Domain**: $ x \leq 0 $
+
+✅ **Inverse expression**: $ y = 1 + \sqrt{|x|} $, **domain**: $ x \leq 0 $
+
+---
+
+### ✅ Final Inverse Function:
+
+$$
+y = 
+\begin{cases}
+-\ln(x - 1), & x \geq 2 \\
+1 - \frac{1}{2}x, & 0 < x < 2 \\
+1 + \sqrt{|x|}, & x \leq 0
+\end{cases}
+$$
+
+This matches **Option G** exactly.
+
+---
+
+### ✅ Final Answer:
+
+$$
+\boxed{G}
+$$"
+769,"Okay, let's see. The problem is to convert 9π radians to degrees. Hmm, I remember that there's a conversion factor between radians and degrees. Let me think. I think 2π radians is equal to 360 degrees. Yeah, that's right because a full circle is 360 degrees, which is 2π radians. So, to convert radians to degrees, you multiply by (180 degrees / π radians). Let me verify that.
+
+If 2π radians = 360 degrees, then 1 radian = 360/(2π) degrees = 180/π degrees. So, to convert radians to degrees, you multiply the number of radians by (180/π). That makes sense.
+
+So, the problem is 9π radians. Let's do the conversion. Multiply 9π by (180/π). The π in the numerator and denominator cancels out. So that's 9 * 180 = 1620 degrees. Let me check that again. If 2π is 360, then π radians is 180 degrees. So 9π radians would be 9 times 180 degrees, which is 1620. Yep, that's right. Because each π radians is 180 degrees, so 9π is 9*180=1620. That seems straightforward.
+
+Wait, let me make sure I didn't mix up anything. Sometimes I get confused between radians and degrees. Let's take a simple example. For example, π radians is 180 degrees, so 2π is 360, which is a full circle. So 9π is 9 times π, so 9*180=1620. That checks out. I think that's correct. So the answer should be 1620 degrees.
+</think>
+
+To convert an angle from radians to degrees, we use the standard conversion factor:
+
+$$
+1 \text{ radian} = \frac{180^\circ}{\pi}
+$$
+
+Given the angle is $9\pi$ radians, we multiply by $\frac{180^\circ}{\pi}$:
+
+$$
+9\pi \times \frac{180^\circ}{\pi} = 9 \times 180^\circ = 1620^\circ
+$$
+
+The $\pi$ terms cancel out, leaving a clean result.
+
+[ANS]1620
+
+\boxed{1620}"
+770,"Okay, let's tackle each of these problems one by one. The question is asking for the base \( b \) such that the graph of \( y = b^x \) passes through the given point. Remember that if a point \( (x, y) \) is on the graph of \( y = b^x \), then \( y = b^x \). So, for each point, we can set up the equation \( y = b^x \) and solve for \( b \).
+
+Let's start with the first one: \( (2, 9) \). So here, \( x = 2 \) and \( y = 9 \). Plugging into the equation: \( 9 = b^2 \). To solve for \( b \), we take the square root of both sides. But we have to be careful: the base \( b \) for exponential functions is usually positive and not equal to 1 (since \( b = 1 \) would make the function constant, which isn't exponential). So \( b = \sqrt{9} = 3 \) (we ignore the negative root because bases are positive). So the first answer is 3.
+
+Second problem: \( (1, 4) \). Here, \( x = 1 \), \( y = 4 \). So \( 4 = b^1 \), which means \( b = 4 \). That's straightforward.
+
+Third problem: \( (-2, 1) \). So \( x = -2 \), \( y = 1 \). Then \( 1 = b^{-2} \). Let's rewrite \( b^{-2} \) as \( \frac{1}{b^2} \), so \( 1 = \frac{1}{b^2} \). Multiply both sides by \( b^2 \): \( b^2 = 1 \). So \( b = \sqrt{1} = 1 \) or \( b = -1 \). But again, exponential bases must be positive and not 1 (since \( b = 1 \) gives \( y = 1^x = 1 \), which is a constant function, not exponential). Wait, but if \( b = 1 \), then \( 1^{-2} = 1 \), which is true, but \( y = 1^x \) is a horizontal line at \( y = 1 \), so it's not considered an exponential function here. The problem says ""the graph of \( y = b^x \)"", so maybe they allow \( b = 1 \)? Wait, but in standard exponential functions, \( b \neq 1 \). Let me check the problem statement: it just says ""the base \( b \)"". Hmm. Let's think. If \( b = 1 \), then \( 1^x = 1 \) for all \( x \), so the graph is the line \( y = 1 \), which does pass through \( (-2, 1) \). But maybe the problem expects \( b \neq 1 \). Wait, but in the equation \( 1 = b^{-2} \), \( b^2 = 1 \), so \( b = 1 \) or \( b = -1 \). But \( b = -1 \) is invalid because negative bases with non-integer exponents can be problematic (e.g., \( (-1)^{0.5} \) is imaginary). So the only real positive base here is \( b = 1 \). But is \( b = 1 \) considered a valid base here? The problem might be expecting \( b = 1 \), but let's hold that thought. Maybe the problem is designed so that \( b \neq 1 \), but in this case, the only solution is \( b = 1 \). Let's note that and move on.
+
+Fourth problem: \( (1, 3) \). So \( x = 1 \), \( y = 3 \). Then \( 3 = b^1 \), so \( b = 3 \).
+
+Fifth problem: \( (-1, 0.5) \). Here, \( x = -1 \), \( y = 0.5 \). So \( 0.5 = b^{-1} \). \( b^{-1} = 1/b \), so \( 1/b = 0.5 \), which means \( b = 1 / 0.5 = 2 \). That's straightforward.
+
+Sixth problem: \( (1, 1) \). \( x = 1 \), \( y = 1 \). So \( 1 = b^1 \), so \( b = 1 \). But again, as before, \( b = 1 \) gives a constant function. But the problem says ""the graph of \( y = b^x \)"", so technically, \( y = 1^x = 1 \) for all \( x \), so it does pass through \( (1, 1) \). So \( b = 1 \).
+
+Seventh problem: \( (0.5, 1.4142135623731) \). Let's see, 1.4142135623731 is approximately \( \sqrt{2} \approx 1.41421356237 \). So \( x = 0.5 \), \( y = \sqrt{2} \). So \( \sqrt{2} = b^{0.5} \). Raising both sides to the power of 2: \( (\sqrt{2})^2 = (b^{0.5})^2 \) => \( 2 = b \). So \( b = 2 \).
+
+Eighth problem: \( (-1, 0.5) \). Wait, this is the same as the fifth problem. Let's check: \( x = -1 \), \( y = 0.5 \). So \( 0.5 = b^{-1} \), so \( b = 2 \). So same as fifth.
+
+Ninth problem: \( (0.5, 0.707106781186548) \). Let's see, 0.707106781186548 is approximately \( 1/\sqrt{2} \approx 0.70710678118 \). So \( x = 0.5 \), \( y = 1/\sqrt{2} \). So \( 1/\sqrt{2} = b^{0.5} \). Squaring both sides: \( (1/\sqrt{2})^2 = (b^{0.5})^2 \) => \( 1/2 = b \). So \( b = 1/2 \).
+
+Tenth problem: \( (-3, 0.125) \). 0.125 is \( 1/8 \), which is \( 1/2^3 \). So \( x = -3 \), \( y = 1/8 \). So \( 1/8 = b^{-3} \). \( b^{-3} = 1/b^3 \), so \( 1/b^3 = 1/8 \) => \( b^3 = 8 \) => \( b = 2 \). Because \( 2^3 = 8 \).
+
+Let me go back to the third problem: \( (-2, 1) \). So \( 1 = b^{-2} \). As \( b^{-2} = 1/b^2 \), so \( 1 = 1/b^2 \) => \( b^2 = 1 \) => \( b = 1 \) or \( b = -1 \). But \( b \) must be positive (since exponential functions with negative bases can't be defined for all real numbers, e.g., \( (-1)^{0.5} \) is imaginary). So \( b = 1 \) is the only real positive solution. But in standard exponential functions, \( b \neq 1 \), but the problem doesn't specify that. Let's check if the problem expects \( b = 1 \) here. For example, if \( b = 1 \), then \( y = 1^x = 1 \) for all \( x \), so the graph is the horizontal line \( y = 1 \), which does pass through \( (-2, 1) \). So maybe the answer is 1.
+
+Let's verify each step:
+
+1. \( (2,9) \): \( 9 = b^2 \) => \( b = 3 \) (since \( b > 0 \)). Correct.
+
+2. \( (1,4) \): \( 4 = b^1 \) => \( b = 4 \). Correct.
+
+3. \( (-2,1) \): \( 1 = b^{-2} \) => \( b^2 = 1 \) => \( b = 1 \) (since \( b > 0 \), \( b = -1 \) is invalid). Correct.
+
+4. \( (1,3) \): \( 3 = b^1 \) => \( b = 3 \). Correct.
+
+5. \( (-1, 0.5) \): \( 0.5 = b^{-1} \) => \( b = 2 \). Correct.
+
+6. \( (1,1) \): \( 1 = b^1 \) => \( b = 1 \). Correct (even though it's a constant function, the problem says ""the graph of \( y = b^x \)"", so technically it's valid here).
+
+7. \( (0.5, 1.4142135623731) \): \( 1.4142135623731 \approx \sqrt{2} \), so \( \sqrt{2} = b^{0.5} \) => \( b = (\sqrt{2})^2 = 2 \). Correct.
+
+8. \( (-1, 0.5) \): Same as 5, so \( b = 2 \).
+
+9. \( (0.5, 0.707106781186548) \): \( 0.707106781186548 \approx 1/\sqrt{2} \), so \( 1/\sqrt{2} = b^{0.5} \) => \( b = (1/\sqrt{2})^2 = 1/2 \). Correct.
+
+10. \( (-3, 0.125) \): \( 0.125 = 1/8 = 2^{-3} \), so \( b^{-3} = 2^{-3} \) => \( b = 2 \). Correct.
+
+Let me check the sixth problem again: \( (1,1) \). If \( b = 1 \), then \( y = 1^x = 1 \), so it passes through \( (1,1) \). The problem doesn't specify that \( b \neq 1 \), so the answer is 1.
+
+Third problem: \( (-2,1) \). If \( b = 1 \), then \( y = 1^x = 1 \), so it passes through \( (-2,1) \). So \( b = 1 \).
+
+So the answers in order are:
+
+1. 3
+
+2. 4
+
+3. 1
+
+4. 3
+
+5. 2
+
+6. 1
+
+7. 2
+
+8. 2
+
+9. 0.5
+
+10. 2
+
+Let me confirm each:
+
+1. (2,9): \( 3^2 = 9 \) ✔️
+
+2. (1,4): \( 4^1 = 4 \) ✔️
+
+3. (-2,1): \( 1^{-2} = 1 \) ✔️ (since \( 1 \) to any power is 1)
+
+4. (1,3): \( 3^1 = 3 \) ✔️
+
+5. (-1,0.5): \( 2^{-1} = 0.5 \) ✔️
+
+6. (1,1): \( 1^1 = 1 \) ✔️
+
+7. (0.5, ~1.414): \( 2^{0.5} = \sqrt{2} \approx 1.414 \) ✔️
+
+8. (-1,0.5): same as 5, \( 2^{-1} = 0.5 \) ✔️
+
+9. (0.5, ~0.707): \( (0.5)^{0.5} = \sqrt{0.5} = 1/\sqrt{2} \approx 0.707 \) ✔️
+
+10. (-3, 0.125): \( 2^{-3} = 1/8 = 0.125 \) ✔️
+
+Yes, all check out. So the answers are as above.
+</think>
+
+[ANS]3,4,1,3,2,1,2,2,0.5,2
+
+\boxed{3,4,1,3,2,1,2,2,0.5,2}"
+771,"Okay, let's see. I need to find the exact value of sec(-π/3). Hmm, first, I remember that secant is the reciprocal of cosine. So sec(x) = 1/cos(x). Also, cosine is an even function, right? That means cos(-x) = cos(x). So maybe I can use that property here.
+
+Let me start by recalling the unit circle. The angle -π/3 is the same as rotating 30 degrees clockwise from the positive x-axis, but since cosine is even, cos(-π/3) = cos(π/3). What's cos(π/3)? I think that's 1/2. Let me confirm. In the unit circle, π/3 radians is 60 degrees. The coordinates at 60 degrees are (cos(60°), sin(60°)) which is (1/2, √3/2). So cos(π/3) is 1/2. Therefore, cos(-π/3) is also 1/2 because cosine is even.
+
+Then sec(-π/3) is 1 divided by cos(-π/3), so that's 1/(1/2) which is 2. Let me check if that makes sense. Secant is the reciprocal of cosine, so if cosine of -π/3 is 1/2, then secant should be 2. Yeah, that seems right.
+
+Wait, let me make sure I didn't mix up any signs. Since -π/3 is in the fourth quadrant, but cosine is positive in the fourth quadrant, so cos(-π/3) is positive, which matches with cos(π/3) being positive. So that's good. So sec(-π/3) = 2. I think that's the answer.
+
+Let me just recap. Step 1: sec(x) = 1/cos(x). Step 2: cos(-x) = cos(x), so cos(-π/3) = cos(π/3). Step 3: cos(π/3) = 1/2. Step 4: 1/(1/2) = 2. Yep, that all checks out. So the exact value is 2, which is a fraction (2/1, but they just want it as 2). The problem says ""exact value as fraction"", so 2 is a fraction (since 2 = 2/1). So the answer should be 2.
+
+I don't think I made any mistakes here. Let me think if there's another way to approach it. Maybe using reference angles. The reference angle for -π/3 is π/3, since it's in the fourth quadrant (negative angles go clockwise). The cosine of the reference angle is 1/2, and since cosine is positive in the fourth quadrant, cos(-π/3) = 1/2, so secant is 2. Yep, same result.
+
+Alright, I'm confident the answer is 2.
+</think>
+
+[ANS]2
+
+\boxed{2}"
