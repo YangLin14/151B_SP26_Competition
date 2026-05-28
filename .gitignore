@@ -4,3 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 .cache/
 *.log
+.DS_Store
+results/*
+!results/submission/
+!results/submission/**

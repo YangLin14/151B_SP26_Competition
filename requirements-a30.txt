@@ -1,0 +1,8 @@
+vllm==0.9.1
+transformers>=4.51.1,<4.54.0
+tqdm
+sentencepiece
+protobuf
+numpy
+sympy
+antlr4-python3-runtime==4.11.1
