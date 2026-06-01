@@ -30,7 +30,18 @@ CLI call:
 ```bash
 python run_inference.py \
   --data-path data/private.jsonl \
-  --output-path results/submission_final.csv
+  --output-path results/submission_final.csv \
+  --k 5 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 32 \
+  --max-num-batched-tokens 32768 \
+  --no-enable-prefix-caching \
+  --generation-chunk-size 64 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 32768
 ```
 
 ## Compliance Notes
@@ -64,10 +75,10 @@ python run_inference.py \
   --max-tokens 24576 \
   --max-model-len 32768 \
   --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 16384 \
+  --max-num-seqs 32 \
+  --max-num-batched-tokens 32768 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 32 \
+  --generation-chunk-size 64 \
   --retry-bad \
   --retry-k 2 \
   --retry-max-tokens 32768
@@ -88,4 +99,16 @@ assert len(ids) == len(set(ids))
 assert all(row["response"].strip() for row in rows)
 print("submission_final.csv is structurally valid")
 PY
+```
+
+Final k=5 merged CSV validation:
+
+```text
+required ids: 943
+csv rows: 943
+order matches private: True
+missing: 0
+extra: 0
+duplicates: 0
+empty responses: 0
 ```

@@ -4,13 +4,13 @@
 
 **A Practical Math Reasoning Submission Pipeline**
 
-Qwen3-4B-Thinking private submission: A30 backup run and H200 K=5 second round
+Qwen3-4B-Thinking private submission: final H200 K=5 run
 
 Team: Fong-Yu Lin and Anthony Nguyen
 
 ## Speaker notes
 
-Our final submission strategy is pragmatic. We first secured a working A30 K=1 private run, then ran a stronger H200 K=5 second round split across two shards. If the H200 shards merge and validate cleanly, that should be the preferred submission; the A30 K=1 result remains the safer backup.
+Our final submission uses the H200 K=5 second-round run split across two shards. The shards merged cleanly into a complete 943-row CSV with no missing, duplicate, extra, or empty responses.
 
 ---
 
@@ -19,13 +19,8 @@ Our final submission strategy is pragmatic. We first secured a working A30 K=1 p
 ## Slide text
 
 - Base model: `Qwen/Qwen3-4B-Thinking-2507`
-- Hardware:
-  - initial backup: NVIDIA A30
-  - stronger second round: H200
-- Current submission candidates:
-  - backup: A30 K=1 notebook run
-  - preferred if validated: H200 K=5 split run
-- H200 second round:
+- Hardware: NVIDIA H200
+- Final submitted run:
   - private dataset: 943 questions
   - pure model inference
   - thinking mode enabled
@@ -36,7 +31,7 @@ Our final submission strategy is pragmatic. We first secured a working A30 K=1 p
 
 ## Speaker notes
 
-This slide tells the main story. We chose reliability first with the A30 run, then used the H200 to run the stronger K=5 configuration. Neither path uses external tools or Python execution; both use the required model, prompt formatting, thinking mode, and vLLM inference.
+This slide tells the main story. The final submission is the stronger K=5 configuration on H200. It uses the required model, prompt formatting, thinking mode, vLLM inference, self-consistency voting, and adaptive retry. It does not use external tools or Python execution.
 
 ---
 
@@ -59,7 +54,7 @@ The challenge is not just generating a plausible solution. The output must also 
 
 ---
 
-# Slide 4 - Backup A30 Notebook Run
+# Slide 4 - Earlier A30 Backup Run
 
 ## Slide text
 
@@ -79,15 +74,15 @@ Notebook: `inference_sc_k1_private (1).ipynb`
 
 ## Speaker notes
 
-This was the first run we could rely on for submission. It is less ambitious than the H200 K=5 run, but it is simpler, cheaper, and configured around the A30 memory budget.
+This was the first run we could rely on during development. It is not the final submitted result; the final submission uses the stronger H200 K=5 run.
 
 ---
 
-# Slide 5 - Stronger H200 Second Round
+# Slide 5 - Final H200 K=5 Run
 
 ## Slide text
 
-H200 private split run:
+Final H200 private split run:
 
 | Setting | Value |
 |---|---|
@@ -106,30 +101,30 @@ H200 private split run:
 
 ## Speaker notes
 
-This is the stronger second-round run. The H200 has more headroom than the A30, so we increased concurrency and batch-token capacity while keeping the same legal pure-inference method. The two shards must be merged and structurally validated before submission.
+This is the submitted run. The H200 has enough headroom for higher concurrency and batch-token capacity while keeping the same legal pure-inference method. The two shards were merged and structurally validated before submission.
 
 ---
 
-# Slide 6 - Why K=1 First?
+# Slide 6 - Why K=5 Final?
 
 ## Slide text
 
-We prioritized a valid private submission before optimizing accuracy.
+We used K=5 for the final submission because the public sweep favored it.
 
-- Lower memory pressure on A30
-- Faster wall-clock completion
-- Fewer out-of-memory risks
-- Easier chunk-level recovery
-- Avoids waiting for all planned sweeps before submitting
+- Public 0-150 sweep: 103/150 overall
+- MCQ: 47/56
+- Free-form: 56/94
+- Self-consistency reduces single-sample failures
+- Adaptive retry adds samples for low-confidence questions
 
 Tradeoff:
 
-- No majority-vote benefit from self-consistency
-- More vulnerable to one bad sample per question
+- More compute time and memory than K=1
+- Requires shard-level checkpointing and validation
 
 ## Speaker notes
 
-K=1 was not the best theoretical method. It was the safest first completed run. The plan is to submit the H200 K=5 result only if both shards finish and pass validation; otherwise, use the A30 K=1 result as backup.
+K=5 was selected because it gave the strongest completed public validation result while still finishing the private run. The merged final CSV passed structural validation.
 
 ---
 
@@ -234,50 +229,41 @@ Private labels are unavailable, so current validation is structural:
 - generated chunks are saved as CSV checkpoints
 - final merged CSV passes validation script
 
-Diagnostics to report after final merge:
+Final merge diagnostics:
 
-- total submitted rows
-- missing ids
-- duplicate ids
-- empty responses
-
-## Speaker notes
-
-Because private labels are unavailable, we cannot report private accuracy. Instead, our correctness checks are structural.
-
----
-
-# Slide 12 - Public Validation Plan
-
-## Slide text
-
-If time allows, run public validation before replacing the submission:
-
-```bash
-python sweep_inference_configs.py \
-  --data-path data/public.jsonl \
-  --output-dir results/sweeps/public_inference
-```
-
-Sweep candidates:
-
-- `K=3`, `max_tokens=24576`
-- `K=5`, `max_tokens=24576`
-- `K=7`, `max_tokens=24576`
-- `K=5`, `max_tokens=32768`
-- `K=5`, `retry_k=4`
+- total submitted rows: 943
+- missing ids: 0
+- duplicate ids: 0
+- empty responses: 0
 
 ## Speaker notes
 
-The public sweep is the evidence-based way to choose a stronger final configuration. We should only replace the K=1 submission if the stronger run finishes and passes validation in time.
+Because private labels are unavailable, we cannot report private accuracy. Instead, our correctness checks are structural, and the final K=5 merge passed them.
 
 ---
 
-# Slide 13 - Stronger Pipeline Design
+# Slide 12 - Public Validation Result
 
 ## Slide text
 
-The stronger pipeline in `run_inference.py` adds:
+- Selected setting: `K=5`, `max_tokens=24576`
+- Public 0-150 result: 103/150 overall
+- MCQ: 47/56
+- Free-form: 56/94
+- Boxed coverage any sample: 147/150
+- Thinking end any sample: 148/150
+
+## Speaker notes
+
+The public sweep gave us the evidence to use the K=5 configuration for the final submission. It had the best completed public score and acceptable formatting diagnostics.
+
+---
+
+# Slide 13 - Final Pipeline Design
+
+## Slide text
+
+The final pipeline in `run_inference.py` uses:
 
 - self-consistency voting with `K=5`
 - longer generation budget: `max_tokens=24576`
@@ -291,7 +277,7 @@ The stronger pipeline in `run_inference.py` adds:
 
 ## Speaker notes
 
-This is the version we prefer if the H200 shards finish and validate. It is more accurate in principle because multiple samples and retries reduce single-sample failure, but it also costs more time and memory.
+This is the submitted version. Multiple samples and retries reduce single-sample failure, at the cost of more compute time and memory.
 
 ---
 
@@ -303,11 +289,11 @@ Exploratory directions:
 
 - Program-of-Thought with generated Python
 - QLoRA / adapter experiments from `yang-test`
-- higher-`K` self-consistency
+- higher-`K` self-consistency beyond K=5
 - larger token budgets
-- public validation sweeps
+- QLoRA fine-tuning
 
-Reason not submitted yet:
+Reason not submitted:
 
 - deadline risk
 - incomplete validation
@@ -316,7 +302,7 @@ Reason not submitted yet:
 
 ## Speaker notes
 
-The final submission is not the only idea we considered. We made a conservative final choice because a robust, valid submission is more important than an unfinished optimized run.
+The final submission is not the only idea we considered. We chose the best completed, validated run rather than an unfinished optimized run.
 
 ---
 
@@ -335,7 +321,7 @@ Why QLoRA failed for this submission:
 - public answer-only data taught short answers more than reasoning
 - Numina adapter did not consistently improve free-form accuracy
 - vLLM could not run this LoRA adapter in our setup, so adapter eval required Transformers
-- deadline risk was higher than the pure base-model A30 path
+- deadline risk was higher than the pure base-model H200 K=5 path
 
 ## Speaker notes
 
@@ -347,10 +333,10 @@ The QLoRA work was useful, but it did not justify replacing the base model. The 
 
 ## Slide text
 
-1. Reliable private inference path on a single A30 GPU.
+1. Reproducible private inference path through `run_inference.py`.
 2. Legally simple: no tools, no external APIs, no manual correction.
-3. Chunk-level checkpointing reduces risk from long DSMLP sessions.
-4. Clear path to stronger runs through public sweeps and adaptive retry.
+3. Shard-level checkpointing reduces risk from long GPU sessions.
+4. Public sweep selected the final K=5 configuration.
 
 ## Speaker notes
 
@@ -362,16 +348,15 @@ The main strength is operational reliability. The system is designed around real
 
 ## Slide text
 
-1. `K=1` does not benefit from majority voting.
-2. Private accuracy cannot be measured directly.
-3. Some generations may miss final boxed answers.
-4. QLoRA was attempted but rejected after matched evaluations.
-5. Optimized runs may not finish before the deadline.
-6. Notebook chunks must be merged and validated carefully.
+1. Private accuracy cannot be measured directly.
+2. Some generations may miss final boxed answers.
+3. QLoRA was attempted but rejected after matched evaluations.
+4. K=5 costs substantially more compute than K=1.
+5. Shards must be merged and validated carefully.
 
 ## Speaker notes
 
-The current submission is conservative, not optimal. The main risk is that one bad generation directly becomes the submitted response.
+The current submission is stronger than the earlier K=1 development run, but private accuracy is still unknown. The main remaining risks are stochastic variation and imperfect final-answer formatting.
 
 ---
 
@@ -398,16 +383,9 @@ This project became as much an engineering problem as a modeling problem. We lea
 
 Immediate:
 
-- merge all K=1 private chunks
-- validate final CSV structure
-- submit the K=1 notebook result
-
-Next if time allows:
-
-- finish public sweep
-- run K=5 or K=7 private inference
-- enable adaptive retry
-- compare public diagnostics before replacing submission
+- submit the validated H200 K=5 CSV
+- keep the exact k=5 `run_inference.py` defaults for reproducibility
+- record hardware and runtime in README
 
 Longer term:
 
@@ -417,7 +395,7 @@ Longer term:
 
 ## Speaker notes
 
-The short-term plan is simple: get the guaranteed submission in, then improve only if a stronger run finishes cleanly. Longer term, self-distillation from correct traces is likely more promising than training only on final answers.
+The short-term plan is complete: submit the validated K=5 CSV and keep the repo reproducible. Longer term, self-distillation from correct traces is likely more promising than training only on final answers.
 
 ---
 
@@ -427,15 +405,14 @@ The short-term plan is simple: get the guaranteed submission in, then improve on
 
 Our final strategy is deadline-aware:
 
-**Use the H200 K=5 split run if both shards merge and validate; keep the A30 K=1 run as a backup.**
+**Submit the validated H200 K=5 split run.**
 
 This gives us:
 
-- a guaranteed backup submission
-- a stronger preferred submission candidate
+- a stronger completed submission
 - a reproducible inference path
-- a clear plan for stronger future runs
+- a clear record of validation and runtime
 
 ## Speaker notes
 
-This is the final message. We chose a practical strategy that balances accuracy, reliability, and deadline risk.
+This is the final message. We chose the strongest completed run that passed structural validation and kept the repository aligned with that configuration.

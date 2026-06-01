@@ -30,24 +30,24 @@
 \maketitle
 
 \begin{abstract}
-We describe our CSE 151B competition submission pipeline for mathematical reasoning with \texttt{Qwen/Qwen3-4B-Thinking-2507}. Under deadline and hardware constraints, we first secured a reliable private submission candidate from a conservative A30 notebook run using pure model inference, thinking mode, chunked checkpointing, and a single sample per question. We then ran a stronger second round on H200 hardware using self-consistency with $K=5$, adaptive retry, and two private shards. This report documents the backup A30 K=1 system, the preferred H200 K=5 split run, the engineering decisions behind them, and the QLoRA experiments we rejected.
+We describe our CSE 151B competition submission pipeline for mathematical reasoning with \texttt{Qwen/Qwen3-4B-Thinking-2507}. The final submitted system runs on H200 hardware using pure model inference, thinking mode, self-consistency with $K=5$, adaptive retry, and two private shards. This report documents the final H200 K=5 split run, the engineering decisions behind it, the validation results, and the QLoRA experiments we rejected.
 \end{abstract}
 
 \section{Introduction}
 
 The competition task is to generate mathematical solutions for a private test set and submit a CSV containing an \texttt{id} and a model-generated \texttt{response} for each problem. A useful response must not only contain correct reasoning, but must also expose the final answer in a format that can be extracted reliably, typically using \verb|\boxed{...}|. The private set contains 943 examples, and private labels are not available, so final validation must focus on structural correctness: complete row coverage, no duplicate IDs, no empty responses, and no manual modification of model answers.
 
-Our project explored several possible directions, including prompt engineering, self-consistency, Program-of-Thought, QLoRA adapters, and public validation sweeps. Because the optimized runs were not guaranteed to finish before the deadline, we first produced a backup submission from the notebook \verb|inference_sc_k1_private (1).ipynb|. This notebook runs the required model on an NVIDIA A30 GPU using vLLM, thinking mode, a maximum generation budget of 16,384 tokens, and one sample per question. We later ran a stronger H200 second round with $K=5$ and adaptive retry, split into two shards covering indices 0--472 and 472--943. If those H200 shards merge and validate cleanly, they are the preferred submission; otherwise the A30 K=1 result remains the fallback.
+Our project explored several possible directions, including prompt engineering, self-consistency, Program-of-Thought, QLoRA adapters, and public validation sweeps. The final submitted run is the H200 second round with $K=5$ and adaptive retry, split into two shards covering indices 0--472 and 472--943. The two shards merged cleanly into a complete 943-row CSV, so this K=5 run is the submitted system.
 
-\section{Submitted systems}
+\section{Submitted system}
 
 \subsection{Model and hardware}
 
-Both submitted-system candidates use the required base model, \texttt{Qwen/Qwen3-4B-Thinking-2507}. No fine-tuned checkpoint, external model, external API, calculator, or generated-code execution is used at private inference time. The A30 notebook log confirms CUDA availability, bfloat16 model loading, and native Qwen3 resolution through vLLM. The H200 second round uses the same legal pure-inference pipeline through \texttt{run\_inference.py}, but with larger self-consistency and batching settings.
+The submitted system uses the required base model, \texttt{Qwen/Qwen3-4B-Thinking-2507}. No fine-tuned checkpoint, external model, external API, calculator, or generated-code execution is used at private inference time. The H200 run uses the legal pure-inference pipeline exposed through \texttt{run\_inference.py}.
 
 \begin{table}[h]
 \centering
-\caption{Configuration of the conservative A30 backup notebook.}
+\caption{Earlier A30 backup notebook used during development, not submitted.}
 \label{tab:k1-config}
 \begin{tabular}{ll}
 \toprule
@@ -70,7 +70,7 @@ Chunked prefill & enabled \\
 
 \begin{table}[h]
 \centering
-\caption{Configuration of the stronger H200 second-round private run.}
+\caption{Configuration of the final submitted H200 K=5 private run.}
 \label{tab:h200-config}
 \begin{tabular}{ll}
 \toprule
@@ -101,48 +101,48 @@ The prompt design is intentionally simple. We found that broad instructions such
 
 \subsection{Inference flow}
 
-The inference flow is checkpointed in both the A30 notebook and the H200 split run:
+The inference flow is checkpointed in the H200 split run:
 
 \begin{enumerate}
   \item Load all private examples from \texttt{data/private.jsonl}.
   \item Split the 943 examples into recoverable chunks or index shards.
   \item Select assigned sections, chunks, or index ranges for the current runner.
   \item Render each problem using the Qwen chat template with thinking mode enabled.
-  \item Generate one response per problem with vLLM.
+  \item Generate $K=5$ responses per problem with vLLM.
   \item Extract the final nested \verb|\boxed{...}| answer for diagnostics.
   \item Write each completed chunk immediately to a CSV checkpoint.
   \item Merge all chunk CSVs into the final Kaggle submission.
 \end{enumerate}
 
-The chunked design is important for deadline reliability. A full private run can be interrupted by wall-clock limits, notebook crashes, or GPU availability. By saving every chunk independently, the team can rerun only missing chunks and can split sections across multiple A30 sessions.
+The chunked design is important for deadline reliability. A full private run can be interrupted by wall-clock limits, process crashes, or GPU availability. By saving raw JSONL checkpoints after each generation chunk, the team can rerun the same shard command and resume completed questions.
 
 \section{Validation}
 
-Because private labels are unavailable, private accuracy cannot be measured locally. We therefore validate the submission structurally. The final merged CSV should contain exactly 943 rows, one for each private ID, with no missing IDs, no extra IDs, no duplicates, and no empty responses. The repository includes \texttt{merge\_submission\_shards.py}, which performs these checks before writing the final CSV. For the H200 second round, the intended merge inputs are \texttt{results/submission\_part\_000\_472.csv} and \texttt{results/submission\_part\_472\_943.csv}.
+Because private labels are unavailable, private accuracy cannot be measured locally. We therefore validate the submission structurally. The final merged CSV contains exactly 943 rows, one for each private ID, with no missing IDs, no extra IDs, no duplicates, and no empty responses. The repository includes \texttt{merge\_submission\_shards.py}, which performs these checks before writing the final CSV. The H200 merge inputs were \texttt{results/submission\_part\_000\_472.csv} and \texttt{results/submission\_part\_472\_943.csv}.
 
 \begin{table}[h]
 \centering
-\caption{Submission validation checklist. Fill the final values after the merged CSV is produced.}
+\caption{Final K=5 submission validation checklist.}
 \label{tab:validation}
 \begin{tabular}{lll}
 \toprule
 Check & Expected & Final value \\
 \midrule
-Rows in final CSV & 943 & [fill after merge] \\
-Missing private IDs & 0 & [fill after merge] \\
-Extra IDs & 0 & [fill after merge] \\
-Duplicate IDs & 0 & [fill after merge] \\
-Empty responses & 0 & [fill after merge] \\
-Kaggle/private score & unavailable locally & [fill if released] \\
+Rows in final CSV & 943 & 943 \\
+Missing private IDs & 0 & 0 \\
+Extra IDs & 0 & 0 \\
+Duplicate IDs & 0 & 0 \\
+Empty responses & 0 & 0 \\
+Kaggle/private score & unavailable locally & unavailable locally \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{Stronger pipeline design}
 
-The conservative K=1 notebook is the backup path, but it is not the strongest method. The A30 branch also contains a more complete reproducible pipeline in \texttt{run\_inference.py}. That pipeline uses the same base model and legal private-inference constraints, but adds self-consistency and adaptive retry. This is the pipeline used for the H200 second round.
+The submitted pipeline in \texttt{run\_inference.py} uses the base model and legal private-inference constraints, while adding self-consistency and adaptive retry. This is the pipeline used for the H200 K=5 final run.
 
-The planned settings are:
+The submitted settings are:
 
 \begin{itemize}
   \item $K=5$ independent samples per question.
@@ -154,30 +154,30 @@ The planned settings are:
   \item public scoring when the input file includes public labels.
 \end{itemize}
 
-This method should be more accurate in principle because majority voting reduces single-sample errors and retry gives low-confidence questions additional chances. The cost is substantially higher wall-clock time and memory pressure than the A30 K=1 backup. For this reason, the H200 method is the preferred submission only if both shards complete and pass structural validation.
+This method should be more accurate in principle because majority voting reduces single-sample errors and retry gives low-confidence questions additional chances. The cost is substantially higher wall-clock time and memory pressure than a single-sample run, which is why we used shard-level checkpointing and merge validation.
 
-\section{Public sweep plan}
+\section{Public sweep result}
 
-To choose a stronger configuration objectively, we prepared \texttt{sweep\_inference\_configs.py}. It evaluates several public-set candidates and writes a summary table.
+To choose the final configuration objectively, we used \texttt{sweep\_inference\_configs.py}. It evaluates several public-set candidates and writes a summary table.
 
 \begin{table}[h]
 \centering
-\caption{Planned public validation sweep configurations.}
+\caption{Public validation sweep configurations.}
 \label{tab:sweep}
 \begin{tabular}{lll}
 \toprule
 Name & Main setting & Purpose \\
 \midrule
-A & $K=3$, \texttt{max\_tokens=24576} & Lower-cost self-consistency \\
-B & $K=5$, \texttt{max\_tokens=24576} & Main planned final setting \\
-C & $K=7$, \texttt{max\_tokens=24576} & More voting at higher cost \\
-D & $K=5$, \texttt{max\_tokens=32768} & Larger reasoning budget \\
+A & $K=5$, \texttt{max\_tokens=24576} & Selected final setting \\
+B & $K=7$, \texttt{max\_tokens=24576} & More voting at higher cost \\
+C & $K=3$, \texttt{max\_tokens=24576} & Lower-cost self-consistency \\
+D & $K=5$, \texttt{max\_tokens=16384} & Lower reasoning budget \\
 E & $K=5$, \texttt{retry\_k=4} & More retry samples for failures \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The best public configuration would be selected primarily by public overall accuracy, with boxed-answer coverage, thinking completion, truncation rate, retry rate, and average token usage as secondary diagnostics. We would only use a sweep-selected private run if the full run finishes cleanly and passes structural validation.
+The selected public configuration scored 103/150 overall on the public 0--150 sweep, with 47/56 MCQ accuracy and 56/94 free-form accuracy. It also had high boxed-answer and thinking-completion coverage, so we used it for the final private run.
 
 \section{Exploratory work not used for submission}
 
@@ -206,22 +206,22 @@ The public-smoke adapter was useful as an engineering test: it verified that 4-b
 
 The NuminaMath-CoT adapter was a more serious attempt because Numina provides worked solutions rather than only final answers. At a 2048-token evaluation budget it had a small overall gain, 20/50 versus 17/50, but the gain was not stable: free-form accuracy was worse than the base control. When we increased the evaluation budget to 4096 tokens under matched Transformers settings, the base model reached 26/50 while the Numina 5k adapter reached only 17/50. This was the strongest evidence that the adapter should not be used for final submission.
 
-There were also engineering reasons to avoid QLoRA under deadline pressure. In our setup, vLLM was useful for fast base-model prompt experiments but could not run the Qwen3 LoRA adapter path reliably, so fair adapter comparisons required the slower Transformers backend. Since our final private run needed to finish on an A30 with limited time, the base-model inference path was safer.
+There were also engineering reasons to avoid QLoRA under deadline pressure. In our setup, vLLM was useful for fast base-model prompt experiments but could not run the Qwen3 LoRA adapter path reliably, so fair adapter comparisons required the slower Transformers backend. Since our final private run needed to finish reliably, the base-model inference path was safer.
 
 \section{Discussion}
 
-The main strength of our submission strategy is reliability. The K=1 notebook is simple, legally conservative, and designed around actual A30 constraints. The H200 second round keeps the same legal inference-only design while adding stronger sampling, voting, and retry. Chunk-level or shard-level checkpointing makes both runs recoverable, and structural validation ensures the final CSV is well formed.
+The main strength of our submission strategy is reliability. The H200 K=5 run keeps a legal inference-only design while adding stronger sampling, voting, and retry. Shard-level checkpointing makes the run recoverable, and structural validation ensures the final CSV is well formed.
 
-The main weakness of the A30 backup is that $K=1$ does not benefit from self-consistency. A single bad generation becomes the submitted response. The H200 second round addresses this weakness with majority voting and adaptive retry, but those improvements require more compute time and a careful shard merge. Another limitation is that private accuracy cannot be measured locally, so public validation is the only available proxy for choosing between configurations. Finally, our QLoRA results show that fine-tuning is not automatically beneficial: an adapter can reduce the model's useful reasoning behavior if the training data or token budget is not well matched to the evaluation setting.
+The main weakness is that private accuracy cannot be measured locally, so public validation is the only available proxy for choosing between configurations. The K=5 approach also requires more compute time and a careful shard merge. Finally, our QLoRA results show that fine-tuning is not automatically beneficial: an adapter can reduce the model's useful reasoning behavior if the training data or token budget is not well matched to the evaluation setting.
 
 \section{Future work}
 
-Our immediate future work is operational: merge the H200 K=5 shards, validate the final CSV, and submit it if it is complete. If the H200 merge fails or misses the deadline, the A30 K=1 result remains the fallback. If more time remains, we will run the public sweep, select the best completed configuration, and consider an even stronger private run with $K=7$ or a larger retry budget.
+Our immediate future work is operational: submit the validated H200 K=5 CSV and keep the repository aligned with that exact configuration. If more time were available, we would consider an even stronger private run with $K=7$ or a larger retry budget, but only after public validation and structural checks.
 
 Longer term, the most promising direction is self-distillation from correct reasoning traces. A strong base model can generate multiple public-train responses; correct and well-formatted traces can then be filtered and used for supervised fine-tuning. This is likely more useful than training only on final answers, because it teaches the model the reasoning process rather than only the output format. If we revisit QLoRA, we should train on those filtered correct traces and only use the adapter if it beats the base model under the same split, backend, prompt mode, token budget, and sampling settings.
 
 \section{Conclusion}
 
-Our final strategy is deadline-aware: keep the conservative K=1 A30 private run as a backup, but use the H200 K=5 split run if both shards merge and validate in time. This gives us a guaranteed fallback, a stronger preferred submission candidate, a reproducible inference path, and a clear roadmap for improved runs.
+Our final strategy is deadline-aware: submit the validated H200 K=5 split run. This gives us a stronger completed submission, a reproducible inference path, and a clear record of the validation process.
 
 \end{document}

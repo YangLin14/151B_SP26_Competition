@@ -86,17 +86,16 @@ For DSMLP wall-time limits, `run_inference.py` supports:
 This keeps the final result reproducible while allowing multiple DSMLP sessions
 to complete the private set.
 
-## Final A30 Command
+## Final H200 Command
 
-The final private run that has been confirmed to start successfully on the A30
-uses these high-context self-consistency settings:
+The final private submission uses these high-context self-consistency settings:
 
 ```text
 model_id = Qwen/Qwen3-4B-Thinking-2507
 vllm = 0.9.1
 k = 5
 max_tokens = 24576
-generation_chunk_size = 32
+generation_chunk_size = 64
 retry_bad = true
 retry_k = 2
 retry_max_tokens = 32768
@@ -106,8 +105,8 @@ top_k = 20
 repetition_penalty = 1.0
 max_model_len = 32768
 gpu_memory_utilization = 0.90
-max_num_seqs = 8
-max_num_batched_tokens = 16384
+max_num_seqs = 32
+max_num_batched_tokens = 32768
 enable_chunked_prefill = true
 enable_prefix_caching = false
 enable_thinking = true
@@ -117,6 +116,30 @@ enable_thinking = true
 so the single entry point reproduces the final submission path. For smaller
 debug runs, pass `--limit`, `--start-index`, or `--end-index`.
 
+The submitted private run was split into two shards:
+
+```text
+results/submission_part_000_472.csv
+results/submission_part_472_943.csv
+```
+
+The merged final CSV passed structural validation:
+
+```text
+required ids = 943
+csv rows = 943
+order matches private = true
+missing = 0
+extra = 0
+duplicates = 0
+empty responses = 0
+```
+
+The first shard metadata recorded 472 questions in 5208.8 seconds, about 86.8
+minutes. The second shard was comparable in size. Total generation time was
+therefore about 174 H200-minutes, or about 90 minutes wall-clock when both
+shards ran in parallel.
+
 The environment pins vLLM to `0.9.1` because the older `0.7.x` stack falls back
 to the Transformers backend for `Qwen3ForCausalLM`. The script fails fast on
 old vLLM versions by default so private inference does not accidentally run on
@@ -124,28 +147,27 @@ the slow fallback path.
 
 ## Public Parameter Sweep
 
-`sweep_inference_configs.py` automates public validation for these candidate
-settings:
+`sweep_inference_configs.py` was used to compare public validation settings.
+The selected configuration was `k=5`, `max_tokens=24576`, `retry_k=2`:
 
 ```text
-A. k=3, max_tokens=24576
-B. k=5, max_tokens=24576
-C. k=7, max_tokens=24576, generation_chunk_size=16
-D. k=5, max_tokens=32768
-E. k=5, retry_k=4
+A. k=5, max_tokens=24576
+B. k=7, max_tokens=24576, generation_chunk_size=16
+C. k=3, max_tokens=24576
+D. k=5, max_tokens=16384
+E. k=5, max_tokens=24576, retry_k=4
 ```
 
-It calls `run_inference()` for each candidate, reads the generated metadata, and
-writes:
+The sweep writes metadata for each candidate and a summary table:
 
 ```text
 results/sweeps/public_inference/summary.csv
 results/sweeps/public_inference/summary.json
 ```
 
-The best config is selected primarily by public overall accuracy, with
-boxed-answer coverage, `</think>` completion rate, thinking-token p95,
-truncation rate, and retry rate used as secondary diagnostics.
+On the public 0-150 sweep, the selected `k=5`, `max_tokens=24576` configuration
+scored 103/150 overall, with 47/56 MCQ and 56/94 free-form. Boxed coverage and
+thinking completion diagnostics were also acceptable for the final private run.
 
 The sweep runs each candidate in a separate Python subprocess rather than
 calling all candidates inside one long-lived process. This matters on A30:
@@ -159,23 +181,10 @@ stable on A30 and lets the pipeline add targeted extra samples for questions
 where the first pass has no boxed answer, a tie, or a length-truncated output.
 That retry step is the accuracy optimization.
 
-The confirmed A30 high-context settings use `max_model_len=32768`,
-`max_num_batched_tokens=16384`, and `gpu_memory_utilization=0.90`. Avoid
-raising `max_num_batched_tokens` to `32768` on A30 unless you have already
-validated it in a short public shard, because vLLM allocates a large KV cache up
-front. If the confirmed setup still hits out-of-memory, use the emergency
-settings:
-
-```text
-k = 1
-max_tokens = 4096
-max_model_len = 8192
-gpu_memory_utilization = 0.60
-max_num_seqs = 1
-max_num_batched_tokens = 4096
-enable_prefix_caching = false
-retry_bad = false
-```
+If reproducing on smaller GPUs such as A30, lower `max_num_seqs`,
+`max_num_batched_tokens`, and `generation_chunk_size` may be necessary for
+debugging. Those lower-memory settings are not the submitted configuration; the
+submitted H200 k=5 settings above are the reproducibility target.
 
 ## Why Not Use The Current QLoRA Adapter
 

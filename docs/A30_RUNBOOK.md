@@ -1,7 +1,9 @@
 # A30 Runbook
 
-This is the complete command sequence for running the final legal pipeline on
-one NVIDIA A30 GPU.
+This is the lower-memory A30 runbook for debugging or fallback reproduction.
+The final submitted Kaggle CSV uses the same legal pipeline with k=5 on NVIDIA
+H200; see `README.md` and `docs/FINAL_PIPELINE_DESIGN.md` for the submitted
+settings.
 
 ## 0. Launch DSMLP Pod
 
@@ -521,11 +523,11 @@ some cases. If it is high and memory allows it, rerun a small shard with larger
 Record these values in the final README:
 
 ```text
-GPU type: NVIDIA A30
+GPU type: NVIDIA H200 for the submitted k=5 run
 Model: Qwen/Qwen3-4B-Thinking-2507
 Inference backend: vLLM
-Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 8 --max-num-batched-tokens 16384 --no-enable-prefix-caching --generation-chunk-size 32 --retry-bad --retry-k 2 --retry-max-tokens 32768
-Approx total generation time: copy from results/submission_final.metadata.json elapsed_seconds
+Final command: python run_inference.py --data-path data/private.jsonl --output-path results/submission_final.csv --k 5 --max-tokens 24576 --max-model-len 32768 --gpu-memory-utilization 0.90 --max-num-seqs 32 --max-num-batched-tokens 32768 --no-enable-prefix-caching --generation-chunk-size 64 --retry-bad --retry-k 2 --retry-max-tokens 32768
+Approx total generation time for submitted run: about 174 H200-minutes total, or about 90 minutes wall-clock with the two shards running in parallel
 Model weights: downloaded from HuggingFace Hub automatically by Transformers/vLLM cache
 Single entry point: run_inference.run_inference()
 ```
