@@ -91,19 +91,19 @@ retry_max_tokens = 32768
 
 Parameter differences:
 
-| Parameter | A30/A100 default | H200 submitted run |
-|---|---:|---:|
-| `k` | `5` | `5` |
-| `max_tokens` | `24576` | `24576` |
-| `retry_bad` | `true` | `true` |
-| `retry_k` | `2` | `2` |
-| `retry_max_tokens` | `32768` | `32768` |
-| `max_model_len` | `32768` | `32768` |
-| `gpu_memory_utilization` | `0.90` | `0.90` |
-| `max_num_seqs` | `1` | `32` |
-| `max_num_batched_tokens` | `4096` | `32768` |
-| `generation_chunk_size` | `8` | `64` |
-| `enable_prefix_caching` | `false` | `false` |
+| Parameter                | A30/A100 default | H200 submitted run |
+| ------------------------ | ---------------: | -----------------: |
+| `k`                      |              `5` |                `5` |
+| `max_tokens`             |          `24576` |            `24576` |
+| `retry_bad`              |           `true` |             `true` |
+| `retry_k`                |              `2` |                `2` |
+| `retry_max_tokens`       |          `32768` |            `32768` |
+| `max_model_len`          |          `32768` |            `32768` |
+| `gpu_memory_utilization` |           `0.90` |             `0.90` |
+| `max_num_seqs`           |              `1` |               `32` |
+| `max_num_batched_tokens` |           `4096` |            `32768` |
+| `generation_chunk_size`  |              `8` |               `64` |
+| `enable_prefix_caching`  |          `false` |            `false` |
 
 A30/A100 default command:
 
@@ -156,6 +156,8 @@ python run_inference.py \
 Rerunning the same command with the same `--raw-output-path` resumes from saved
 raw JSONL checkpoints.
 
+It took us **50 hours** in total to finish running the inference on the A30 with k=1 as our first submission.
+
 ## H200 Submitted Settings
 
 Python API:
@@ -195,6 +197,8 @@ python run_inference.py \
 
 These H200 batching settings are not the defaults because they can OOM on
 A30/A100.
+
+It took us **8 hours** in total to finish running the inference on the H200 with k=5 as our second submission.
 
 Output files:
 
@@ -236,14 +240,14 @@ empty responses: 0
 
 ## Contents
 
-| File | Description |
-|---|---|
-| `run_inference.py` | Final single-entry k=5 inference pipeline |
-| `merge_submission_shards.py` | Merge and validate partial private CSV shards |
-| `sweep_inference_configs.py` | Public validation sweep utility used to choose settings |
-| `docs/FINAL_PIPELINE_DESIGN.md` | Method design, compliance notes, and hyperparameters |
-| `docs/GRADESCOPE_SUBMISSION_CHECKLIST.md` | Final submission checklist |
-| `judger.py` | Response scoring logic for labeled public data |
-| `utils.py` | Utilities used by `judger.py` |
-| `data/public.jsonl` | Public dataset with ground-truth answers |
-| `data/private.jsonl` | Private dataset for Kaggle submission |
+| File                                      | Description                                             |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `run_inference.py`                        | Final single-entry k=5 inference pipeline               |
+| `merge_submission_shards.py`              | Merge and validate partial private CSV shards           |
+| `sweep_inference_configs.py`              | Public validation sweep utility used to choose settings |
+| `docs/FINAL_PIPELINE_DESIGN.md`           | Method design, compliance notes, and hyperparameters    |
+| `docs/GRADESCOPE_SUBMISSION_CHECKLIST.md` | Final submission checklist                              |
+| `judger.py`                               | Response scoring logic for labeled public data          |
+| `utils.py`                                | Utilities used by `judger.py`                           |
+| `data/public.jsonl`                       | Public dataset with ground-truth answers                |
+| `data/private.jsonl`                      | Private dataset for Kaggle submission                   |
