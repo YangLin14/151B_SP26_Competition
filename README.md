@@ -11,7 +11,9 @@ run_inference()
 
 The call loads the required model, runs inference on `data/private.jsonl`,
 applies answer extraction, self-consistency voting, adaptive retry, and writes
-the final Kaggle CSV to `results/submission_final.csv`.
+the final Kaggle CSV to `results/submission_final.csv`. By default, this entry
+point uses A30/A100-safe batching parameters. The submitted CSV was generated on
+H200 with larger batching parameters listed below.
 
 ## Final Method
 
@@ -44,9 +46,10 @@ export HF_HOME=/path/to/hf_cache
 
 ## Environment Setup
 
-Use Python 3.11. Start from a fresh environment if the machine has an older
-vLLM stack, especially `vllm==0.7.x`, because old vLLM versions fall back to a
-slow Transformers implementation for Qwen3.
+Use Python 3.11. The setup below is intended for A30/A100-class Linux GPU
+machines. Start from a fresh environment if the machine has an older vLLM stack,
+especially `vllm==0.7.x`, because old vLLM versions fall back to a slow
+Transformers implementation for Qwen3.
 
 ```bash
 uv venv .venv --python 3.11 --seed
@@ -68,17 +71,110 @@ assert tuple(map(int, vllm.__version__.split(".")[:3])) >= (0, 9, 1)
 PY
 ```
 
-## Reproduce The Final Submission
+## Running On A30 / A100
+
+`run_inference.py` defaults to A30/A100-safe batching parameters. These defaults
+keep the same k=5 method, prompts, sampling settings, voting, and retry logic as
+the submitted H200 run, but reduce vLLM memory pressure.
+
+The submitted k=5 CSV was generated on H200 with larger batching parameters.
+Those exact H200 settings may OOM on A30/A100, especially:
+
+```text
+max_num_seqs = 32
+max_num_batched_tokens = 32768
+generation_chunk_size = 64
+max_tokens = 24576
+retry_max_tokens = 32768
+```
+
+Parameter differences:
+
+| Parameter | A30/A100 default | H200 submitted run |
+|---|---:|---:|
+| `k` | `5` | `5` |
+| `max_tokens` | `24576` | `24576` |
+| `retry_bad` | `true` | `true` |
+| `retry_k` | `2` | `2` |
+| `retry_max_tokens` | `32768` | `32768` |
+| `max_model_len` | `32768` | `32768` |
+| `gpu_memory_utilization` | `0.90` | `0.90` |
+| `max_num_seqs` | `8` | `32` |
+| `max_num_batched_tokens` | `16384` | `32768` |
+| `generation_chunk_size` | `32` | `64` |
+| `enable_prefix_caching` | `false` | `false` |
+
+A30/A100 default command:
+
+```bash
+python run_inference.py \
+  --data-path data/private.jsonl \
+  --output-path results/submission_final.csv \
+  --k 5 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
+  --no-enable-prefix-caching \
+  --generation-chunk-size 32 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 32768
+```
+
+If that still OOMs, reduce in this order:
+
+- `--max-num-seqs 4`
+- `--max-num-batched-tokens 8192`
+- `--generation-chunk-size 16`
+- as a last resort, lower `--max-tokens` or `--retry-max-tokens`
+
+The full private run can also be split by index range:
+
+```bash
+python run_inference.py \
+  --data-path data/private.jsonl \
+  --output-path results/submission_part_000_472.csv \
+  --raw-output-path results/submission_part_000_472.raw.jsonl \
+  --metadata-path results/submission_part_000_472.metadata.json \
+  --start-index 0 \
+  --end-index 472 \
+  --k 5 \
+  --max-tokens 24576 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90 \
+  --max-num-seqs 8 \
+  --max-num-batched-tokens 16384 \
+  --no-enable-prefix-caching \
+  --generation-chunk-size 32 \
+  --retry-bad \
+  --retry-k 2 \
+  --retry-max-tokens 32768
+```
+
+Rerunning the same command with the same `--raw-output-path` resumes from saved
+raw JSONL checkpoints.
+
+## H200 Submitted Settings
 
 Python API:
 
 ```python
 from run_inference import run_inference
 
-run_inference()
+run_inference(
+    max_num_seqs=32,
+    max_num_batched_tokens=32768,
+    generation_chunk_size=64,
+)
 ```
 
-Equivalent explicit CLI:
+The no-argument `run_inference()` call uses the A30/A100 defaults. To reproduce
+the submitted H200 batching settings, pass the larger H200 parameters explicitly
+as above, or use the CLI below.
+
+Equivalent explicit H200 CLI:
 
 ```bash
 python run_inference.py \
@@ -97,8 +193,8 @@ python run_inference.py \
   --retry-max-tokens 32768
 ```
 
-These are also the defaults in `run_inference.py`, so `python run_inference.py`
-uses the final submitted configuration.
+These H200 batching settings are not the defaults because they can OOM on
+A30/A100.
 
 Output files:
 

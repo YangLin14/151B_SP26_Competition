@@ -651,12 +651,12 @@ def run_inference(
     repetition_penalty: float = 1.0,
     max_model_len: int = 32768,
     gpu_memory_utilization: float = 0.90,
-    max_num_seqs: int = 32,
-    max_num_batched_tokens: int = 32768,
+    max_num_seqs: int = 8,
+    max_num_batched_tokens: int = 16384,
     enable_chunked_prefill: bool = True,
     enable_prefix_caching: bool = False,
     enable_thinking: bool = True,
-    generation_chunk_size: int = 64,
+    generation_chunk_size: int = 32,
     retry_bad: bool = True,
     retry_k: int = 2,
     retry_max_tokens: int = 32768,
@@ -670,9 +670,9 @@ def run_inference(
 ) -> str:
     """Run the full end-to-end pipeline and write a Kaggle submission CSV.
 
-    Defaults reproduce the final k=5 private submission run on NVIDIA H200.
-    `limit` is only for local smoke tests; leave it as None for the final
-    private run.
+    Defaults use the safer A30/A100 k=5 settings. The submitted CSV was
+    generated on H200 with larger batching settings; pass those explicitly to
+    reproduce the exact H200 run. `limit` is only for local smoke tests.
     """
     configure_environment()
 
@@ -968,12 +968,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
     parser.add_argument("--max-model-len", type=int, default=32768)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.90)
-    parser.add_argument("--max-num-seqs", type=int, default=32)
-    parser.add_argument("--max-num-batched-tokens", type=int, default=32768)
+    parser.add_argument("--max-num-seqs", type=int, default=8)
+    parser.add_argument("--max-num-batched-tokens", type=int, default=16384)
     parser.add_argument("--enable-chunked-prefill", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--generation-chunk-size", type=int, default=64)
+    parser.add_argument("--generation-chunk-size", type=int, default=32)
     parser.add_argument("--retry-bad", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--retry-k", type=int, default=2)
     parser.add_argument("--retry-max-tokens", type=int, default=32768)
