@@ -156,7 +156,7 @@ python run_inference.py \
 Rerunning the same command with the same `--raw-output-path` resumes from saved
 raw JSONL checkpoints.
 
-It took us **50 hours** in total to finish running the inference on the A30 with k=1 as our first submission.
+It'll take an estimated 50 hours for the inference to complete on the full provided leaderboard test set.
 
 ## H200 Submitted Settings
 
