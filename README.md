@@ -73,9 +73,10 @@ PY
 
 ## Running On A30 / A100
 
-`run_inference.py` defaults to A30/A100-safe batching parameters. These defaults
-keep the same k=5 method, prompts, sampling settings, voting, and retry logic as
-the submitted H200 run, but reduce vLLM memory pressure.
+`run_inference.py` defaults to conservative A30/A100 batching parameters. These
+defaults keep the same k=5 method, prompts, sampling settings, voting, and retry
+logic as the submitted H200 run, but strongly reduce vLLM memory pressure. The
+tradeoff is much longer runtime.
 
 The submitted k=5 CSV was generated on H200 with larger batching parameters.
 Those exact H200 settings may OOM on A30/A100, especially:
@@ -99,9 +100,9 @@ Parameter differences:
 | `retry_max_tokens` | `32768` | `32768` |
 | `max_model_len` | `32768` | `32768` |
 | `gpu_memory_utilization` | `0.90` | `0.90` |
-| `max_num_seqs` | `8` | `32` |
-| `max_num_batched_tokens` | `16384` | `32768` |
-| `generation_chunk_size` | `32` | `64` |
+| `max_num_seqs` | `1` | `32` |
+| `max_num_batched_tokens` | `4096` | `32768` |
+| `generation_chunk_size` | `8` | `64` |
 | `enable_prefix_caching` | `false` | `false` |
 
 A30/A100 default command:
@@ -114,21 +115,20 @@ python run_inference.py \
   --max-tokens 24576 \
   --max-model-len 32768 \
   --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 16384 \
+  --max-num-seqs 1 \
+  --max-num-batched-tokens 4096 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 32 \
+  --generation-chunk-size 8 \
   --retry-bad \
   --retry-k 2 \
   --retry-max-tokens 32768
 ```
 
-If that still OOMs, reduce in this order:
+If this still OOMs, reduce in this order:
 
-- `--max-num-seqs 4`
-- `--max-num-batched-tokens 8192`
-- `--generation-chunk-size 16`
-- as a last resort, lower `--max-tokens` or `--retry-max-tokens`
+- `--max-num-batched-tokens 2048`
+- `--gpu-memory-utilization 0.85`
+- as a last resort, lower `--max-tokens` and `--retry-max-tokens`
 
 The full private run can also be split by index range:
 
@@ -144,10 +144,10 @@ python run_inference.py \
   --max-tokens 24576 \
   --max-model-len 32768 \
   --gpu-memory-utilization 0.90 \
-  --max-num-seqs 8 \
-  --max-num-batched-tokens 16384 \
+  --max-num-seqs 1 \
+  --max-num-batched-tokens 4096 \
   --no-enable-prefix-caching \
-  --generation-chunk-size 32 \
+  --generation-chunk-size 8 \
   --retry-bad \
   --retry-k 2 \
   --retry-max-tokens 32768
